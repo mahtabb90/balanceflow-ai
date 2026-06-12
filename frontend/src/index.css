@@ -439,87 +439,143 @@ a:hover {
 
 /* Yoga/Practice library premium gradient presets */
 .grad-yoga-1 {
-  background: radial-gradient(circle at 75% 30%, rgba(251, 146, 60, 0.35) 0%, transparent 60%),
-              linear-gradient(135deg, rgba(20, 184, 166, 0.2) 0%, rgba(6, 10, 18, 0.8) 100%),
+  background: radial-gradient(circle at 80% 20%, rgba(251, 146, 60, 0.45) 0%, rgba(244, 63, 94, 0.15) 40%, transparent 70%),
+              linear-gradient(135deg, rgba(20, 184, 166, 0.2) 0%, rgba(6, 10, 18, 0.95) 100%),
               #080f1a;
-  box-shadow: inset 0 0 40px rgba(20, 184, 166, 0.1);
+  box-shadow: inset 0 0 40px rgba(251, 146, 60, 0.15);
   position: relative;
 }
 .grad-yoga-1::before {
   content: '';
   position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 48px;
-  height: 48px;
+  top: 25px;
+  right: 25px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(251, 236, 198, 0.5) 0%, rgba(251, 146, 60, 0.05) 80%);
-  filter: blur(2px);
-  opacity: 0.8;
+  background: #fff;
+  box-shadow: 0 0 24px #fb923c, 0 0 48px rgba(251, 146, 60, 0.5);
+  opacity: 0.95;
+}
+.grad-yoga-1::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(251, 146, 60, 0.08) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .grad-yoga-2 {
-  background: radial-gradient(ellipse at 30% 80%, rgba(20, 184, 166, 0.3) 0%, transparent 60%),
-              linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, rgba(6, 10, 18, 0.8) 100%),
+  background: radial-gradient(ellipse at 30% 80%, rgba(20, 184, 166, 0.35) 0%, rgba(167, 139, 250, 0.1) 50%, transparent 80%),
+              linear-gradient(135deg, rgba(15, 118, 110, 0.2) 0%, rgba(6, 10, 18, 0.95) 100%),
               #0e0f22;
   position: relative;
+  box-shadow: inset 0 0 40px rgba(20, 184, 166, 0.15);
 }
 .grad-yoga-2::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: -20px;
+  right: -20px;
+  height: 40px;
+  border-radius: 50% 50% 0 0;
+  background: rgba(20, 184, 166, 0.12);
+  filter: blur(2px);
+}
+.grad-yoga-2::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 35px;
-  background: repeating-linear-gradient(45deg, rgba(20, 184, 166, 0.03), rgba(20, 184, 166, 0.03) 2px, transparent 2px, transparent 10px);
-  mask-image: linear-gradient(to top, black, transparent);
-  -webkit-mask-image: linear-gradient(to top, black, transparent);
+  height: 25px;
+  border-radius: 40% 40% 0 0;
+  background: rgba(45, 212, 191, 0.08);
+  border-top: 1px solid rgba(45, 212, 191, 0.15);
 }
 
 .grad-yoga-3 {
-  background: radial-gradient(circle at 50% 80%, rgba(244, 63, 94, 0.25) 0%, transparent 60%),
-              linear-gradient(135deg, rgba(251, 146, 60, 0.2) 0%, rgba(6, 10, 18, 0.8) 100%),
+  background: radial-gradient(circle at 80% 20%, rgba(167, 139, 250, 0.35) 0%, rgba(244, 63, 94, 0.1) 45%, transparent 75%),
+              linear-gradient(135deg, rgba(109, 40, 217, 0.2) 0%, rgba(6, 10, 18, 0.95) 100%),
               #160c14;
   position: relative;
+  box-shadow: inset 0 0 40px rgba(167, 139, 250, 0.15);
 }
 .grad-yoga-3::before {
   content: '';
   position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120px;
-  height: 8px;
+  top: 25px;
+  right: 35px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: rgba(251, 146, 60, 0.2);
-  filter: blur(4px);
+  background: transparent;
+  box-shadow: -6px 6px 0 0 var(--color-beige-accent);
+  transform: rotate(-15deg);
+  filter: drop-shadow(0 0 8px rgba(245, 245, 220, 0.5));
 }
 
 .grad-yoga-4 {
-  background: radial-gradient(circle at 80% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 45%),
-              linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(6, 10, 18, 0.8) 100%),
+  background: radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.3) 0%, rgba(13, 15, 34, 0.2) 50%, transparent 80%),
+              linear-gradient(135deg, rgba(6, 10, 18, 0.95) 0%, rgba(13, 14, 30, 0.98) 100%),
               #070a14;
   position: relative;
+  box-shadow: inset 0 0 40px rgba(56, 189, 248, 0.1);
 }
 .grad-yoga-4::before {
   content: '';
   position: absolute;
-  top: 25px;
-  right: 40px;
-  width: 20px;
-  height: 20px;
+  top: 20px;
+  left: 40px;
+  width: 2px;
+  height: 2px;
   border-radius: 50%;
-  background: #fafaf9;
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
+  background: #fff;
+  box-shadow: 
+    30px 10px 0 #fff, 
+    90px 25px 0 rgba(255,255,255,0.7),
+    140px 15px 0 #fff,
+    180px 40px 0 rgba(255,255,255,0.4),
+    220px 8px 0 #fff;
+  opacity: 0.85;
+}
+.grad-yoga-4::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 75% 75%, rgba(167, 139, 250, 0.08) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .grad-yoga-5 {
-  background: radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 0.25) 0%, transparent 70%),
-              linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(6, 10, 18, 0.8) 100%),
+  background: radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.35) 0%, rgba(52, 211, 153, 0.1) 40%, transparent 70%),
+              linear-gradient(135deg, rgba(11, 18, 30, 0.98) 0%, rgba(6, 10, 18, 0.95) 100%),
               #051110;
   position: relative;
+  box-shadow: inset 0 0 40px rgba(20, 184, 166, 0.15);
 }
 .grad-yoga-5::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.02);
+  box-shadow: 0 0 16px rgba(45, 212, 191, 0.15);
+  animation: breathingPulse 4s infinite ease-in-out;
+}
+.grad-yoga-5::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -528,30 +584,41 @@ a:hover {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 1px solid rgba(20, 184, 166, 0.2);
-  animation: pulse-ring-check 4s ease-in-out infinite;
-}
-@keyframes pulse-ring-check {
-  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0.8; }
-  100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+  border: 1px dashed rgba(167, 139, 250, 0.15);
+  animation: breathingPulse 4s infinite ease-in-out;
+  animation-delay: 2s;
 }
 
 .grad-yoga-6 {
-  background: radial-gradient(ellipse at 50% 20%, rgba(167, 139, 250, 0.2) 0%, transparent 60%),
-              linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(6, 10, 18, 0.8) 100%),
+  background: radial-gradient(ellipse at 50% 20%, rgba(52, 211, 153, 0.35) 0%, rgba(167, 139, 250, 0.05) 50%, transparent 80%),
+              linear-gradient(135deg, rgba(6, 10, 18, 0.95) 0%, rgba(7, 20, 15, 0.98) 100%),
               #07140f;
   position: relative;
+  box-shadow: inset 0 0 40px rgba(52, 211, 153, 0.15);
 }
 .grad-yoga-6::before {
   content: '';
   position: absolute;
+  bottom: -15px;
+  left: 10%;
+  width: 80%;
+  height: 60px;
+  border-radius: 50% 50% 0 0;
+  border-top: 1.5px solid rgba(52, 211, 153, 0.25);
+  mask-image: linear-gradient(to top, black, transparent);
+  -webkit-mask-image: linear-gradient(to top, black, transparent);
+}
+.grad-yoga-6::after {
+  content: '';
+  position: absolute;
   bottom: 0;
   left: 20%;
-  width: 0;
-  height: 0;
-  border-left: 25px solid transparent;
-  border-right: 25px solid transparent;
-  border-bottom: 50px solid rgba(52, 211, 153, 0.08);
+  width: 60%;
+  height: 40px;
+  border-radius: 50% 50% 0 0;
+  border-top: 1.5px solid rgba(167, 139, 250, 0.18);
+  mask-image: linear-gradient(to top, black, transparent);
+  -webkit-mask-image: linear-gradient(to top, black, transparent);
 }
 
 .glow-text-teal {
@@ -560,4 +627,198 @@ a:hover {
 
 .glow-text-lavender {
   text-shadow: 0 0 10px rgba(167, 139, 250, 0.4);
+}
+
+/* Interlocking Zen Circles Balance Logo Styles */
+.zen-circle-1 {
+  width: 65px;
+  height: 65px;
+  background: rgba(20, 184, 166, 0.15);
+  border: 1px solid rgba(20, 184, 166, 0.45);
+  transform: translateX(-15px);
+  animation: floatLogo1 6s infinite ease-in-out;
+}
+.zen-circle-2 {
+  width: 65px;
+  height: 65px;
+  background: rgba(167, 139, 250, 0.15);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  transform: translateX(15px);
+  animation: floatLogo2 6s infinite ease-in-out;
+}
+.zen-circle-3 {
+  width: 50px;
+  height: 50px;
+  background: rgba(245, 245, 220, 0.08);
+  border: 1px solid rgba(245, 245, 220, 0.3);
+  transform: translateY(-20px);
+  animation: floatLogo3 6s infinite ease-in-out;
+}
+@keyframes floatLogo1 {
+  0%, 100% { transform: translateX(-15px) translateY(0); }
+  50% { transform: translateX(-19px) translateY(-2px); }
+}
+@keyframes floatLogo2 {
+  0%, 100% { transform: translateX(15px) translateY(0); }
+  50% { transform: translateX(19px) translateY(2px); }
+}
+@keyframes floatLogo3 {
+  0%, 100% { transform: translateY(-20px) scale(1); }
+  50% { transform: translateY(-22px) scale(1.04); }
+}
+
+/* Close button animations */
+.close-button-hover:hover {
+  background-color: rgba(6, 10, 18, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  transform: scale(1.05);
+}
+
+/* Abstract Yoga/Balance Silhouette Illustration for Today Hero */
+.yoga-illustration {
+  position: absolute;
+  top: 50%;
+  right: 6%;
+  transform: translateY(-50%);
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.yoga-sun {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 245, 220, 0.25) 0%, rgba(167, 139, 250, 0.08) 50%, transparent 75%);
+  box-shadow: 0 0 30px rgba(245, 245, 220, 0.15), 0 0 50px rgba(167, 139, 250, 0.1);
+  animation: sunGlow 8s ease-in-out infinite alternate;
+}
+
+.yoga-ring {
+  position: absolute;
+  border: 1px dashed rgba(20, 184, 166, 0.2);
+  border-radius: 50%;
+  animation: breathingPulse 6s infinite ease-in-out;
+}
+.yoga-ring-1 {
+  width: 120px;
+  height: 120px;
+}
+.yoga-ring-2 {
+  width: 145px;
+  height: 145px;
+  animation-delay: 1.5s;
+}
+
+.lotus-figure {
+  position: relative;
+  width: 60px;
+  height: 75px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+.lotus-head {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-beige-accent);
+  box-shadow: 0 0 8px rgba(245, 245, 220, 0.45);
+  margin-bottom: 5px;
+  animation: floatLotus 5s ease-in-out infinite;
+}
+.lotus-torso {
+  width: 10px;
+  height: 28px;
+  border-radius: 5px;
+  background: linear-gradient(to bottom, var(--color-beige-accent), var(--color-teal));
+  margin-bottom: 2px;
+}
+.lotus-legs {
+  width: 48px;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(to right, var(--color-teal-dark), var(--color-teal), var(--color-teal-dark));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.glow-particle {
+  position: absolute;
+  border-radius: 50%;
+  background-color: var(--color-teal-light);
+  box-shadow: 0 0 6px var(--color-teal-light);
+  animation: floatParticles 7s infinite linear;
+  opacity: 0;
+}
+@keyframes floatParticles {
+  0% {
+    transform: translateY(50px) translateX(0) scale(0.4);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-80px) translateX(var(--particle-drift, 12px)) scale(0.1);
+    opacity: 0;
+  }
+}
+
+@keyframes sunGlow {
+  0% { transform: scale(0.95); opacity: 0.85; }
+  100% { transform: scale(1.05); opacity: 1; }
+}
+@keyframes floatLotus {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
+
+/* Balance Space visual breathing wave */
+.balance-wave-container {
+  height: 110px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.06) 0%, rgba(20, 184, 166, 0.06) 100%);
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.balance-wave-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(167, 139, 250, 0.12);
+  animation: pulse-ring-check 5s infinite ease-in-out;
+}
+.balance-wave-ring-1 {
+  width: 60px;
+  height: 60px;
+}
+.balance-wave-ring-2 {
+  width: 100px;
+  height: 100px;
+  animation-delay: 2.5s;
+}
+.balance-wave-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.55) 0%, rgba(167, 139, 250, 0.25) 100%);
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.45);
+  animation: breathingPulse 4s infinite ease-in-out;
 }

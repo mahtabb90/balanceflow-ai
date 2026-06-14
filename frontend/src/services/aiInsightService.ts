@@ -86,7 +86,6 @@ export function generateRecommendation(entries: WellnessEntry[]): InsightItem {
   }
   if (breathCount > maxCount) {
     favoriteType = 'Breathing';
-    maxCount = breathCount;
     recContent = "Breathing resets appear to be your most consistent practice type this week. Continuing with rhythmic breathing may support natural recovery.";
   }
 
@@ -216,7 +215,7 @@ export function generateSleepEnergyInsight(entries: WellnessEntry[]): InsightIte
 
   const avgSleep = entries.reduce((sum, item) => sum + item.sleepQuality, 0) / entries.length;
 
-  let content = "";
+  let content: string;
   let badge = "Early Pattern";
 
   if (avgSleep >= 7.0) {
@@ -241,4 +240,111 @@ export function getAIInsights(entries: WellnessEntry[]): AIInsightResult {
     reflection: analyzeReflectionThemes(entries),
     focus: generateNextWeekFocus(entries)
   };
+}
+
+export interface WellnessMetrics {
+  totalPracticeMinutes: number;
+  streak: number;
+  yogaSessionsCount: number;
+  meditationSessionsCount: number;
+  breathingSessionsCount: number;
+  avgStressReductionPercent: number;
+  yogaImpactScore: number;
+  bestPracticeType: string;
+}
+
+/**
+ * Calculates wellness metrics from user logs.
+ */
+export function getWellnessMetrics(entries: WellnessEntry[]): WellnessMetrics {
+  const totalPracticeMinutes = entries.reduce((sum, item) => sum + item.duration, 0);
+  
+  const activeDays = new Set(entries.map(item => item.day));
+  const streak = activeDays.size;
+
+  const yogaSessionsCount = entries.filter(e => e.type === 'Yoga').length;
+  const meditationSessionsCount = entries.filter(e => e.type === 'Meditation').length;
+  const breathingSessionsCount = entries.filter(e => e.type === 'Breathing').length;
+
+  const totalStressBefore = entries.reduce((sum, item) => sum + item.stressBefore, 0);
+  const totalStressAfter = entries.reduce((sum, item) => sum + item.stressAfter, 0);
+  const avgStressReductionPercent = totalStressBefore > 0 
+    ? Math.round(((totalStressBefore - totalStressAfter) / totalStressBefore) * 100) 
+    : 0;
+
+  // Yoga impact score (formula is a combination of stress drop and duration minutes)
+  const calculateYogaImpactScore = () => {
+    if (entries.length === 0) return 0;
+    const totalTensionBefore = entries.reduce((sum, item) => sum + item.stressBefore, 0);
+    const totalTensionAfter = entries.reduce((sum, item) => sum + item.stressAfter, 0);
+    
+    // Average Tension Drop
+    const avgTensionDrop = totalTensionBefore > 0 
+      ? ((totalTensionBefore - totalTensionAfter) / totalTensionBefore) * 100 
+      : 0;
+      
+    const avgEnergyAfter = entries.reduce((sum, item) => sum + item.energyAfter, 0) / entries.length;
+    
+    return Math.min(100, Math.round((avgTensionDrop * 0.75) + (avgEnergyAfter * 3.5) + (entries.length * 1.5)));
+  };
+  const yogaImpactScore = calculateYogaImpactScore();
+
+  // Calculate best practice type based on average tension reduction
+  const getBestPracticeType = () => {
+    if (entries.length === 0) return 'None';
+    const categories: ('Yoga' | 'Meditation' | 'Breathing')[] = ['Yoga', 'Meditation', 'Breathing'];
+    let bestCat = 'None';
+    let maxReduction = -1;
+
+    categories.forEach(cat => {
+      const catEntries = entries.filter(e => e.type === cat);
+      if (catEntries.length === 0) return;
+      const reduction = catEntries.reduce((sum, e) => sum + (e.stressBefore - e.stressAfter), 0) / catEntries.length;
+      if (reduction > maxReduction) {
+        maxReduction = reduction;
+        bestCat = cat;
+      }
+    });
+
+    return bestCat === 'Breathing' ? 'Breathing Reset' : bestCat === 'Meditation' ? 'Meditation' : 'Yoga Flow';
+  };
+  const bestPracticeType = getBestPracticeType();
+
+  return {
+    totalPracticeMinutes,
+    streak,
+    yogaSessionsCount,
+    meditationSessionsCount,
+    breathingSessionsCount,
+    avgStressReductionPercent,
+    yogaImpactScore,
+    bestPracticeType
+  };
+}
+
+/**
+ * Formats wellness logs into a prompt structure for a Gemini LLM request.
+ */
+export function generateGeminiPrompt(entries: WellnessEntry[]): string {
+  if (entries.length === 0) {
+    return "No wellness logs recorded this week. Prompt the user to start their self-care journey.";
+  }
+
+  const logsSummary = entries.map(e => 
+    `- Date: ${e.date} (${e.day}), Type: ${e.type}, Title: "${e.title}", Duration: ${e.duration} min, Intensity: ${e.intensity}, Mood before/after: ${e.moodBefore} -> ${e.moodAfter}, Energy before/after: ${e.energyBefore} -> ${e.energyAfter}, Stress before/after: ${e.stressBefore} -> ${e.stressAfter}, Sleep quality: ${e.sleepQuality}/10, Reflection: "${e.reflection || 'None'}"`
+  ).join('\n');
+
+  return `You are BalanceFlow AI, a supportive wellness assistant.
+Here is the user's wellness log for the past week:
+${logsSummary}
+
+Please analyze this data and generate:
+1. Pattern Summary: A brief synthesis of their consistency and volume.
+2. Recommendation: Practical wellness advice based on their most frequent activity.
+3. Stress Trend: An analysis of their stress before and after practice.
+4. Sleep & Energy Connection: Insights correlating sleep quality with daytime energy.
+5. Reflection Summary: Theme analysis from their journal reflections, and a reflective question.
+6. Next Week Focus: Adaptive goals for the upcoming week.
+
+Return the response in JSON format matching the AIInsightResult schema.`;
 }

@@ -10,6 +10,14 @@ interface InsightCardProps {
   onReflectClick?: () => void;
 }
 
+const ICON_MAP: Record<string, LucideIcon> = {
+  pattern: Brain,
+  recommendation: Lightbulb,
+  connection: Activity,
+  reflection: Sparkles,
+  insight: Sparkles
+};
+
 export const InsightCard: React.FC<InsightCardProps> = ({
   title,
   badge = 'AI Insight',
@@ -18,22 +26,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
   reflectionPrompt,
   onReflectClick,
 }) => {
-  const getIcon = (): LucideIcon => {
-    switch (type) {
-      case 'pattern':
-        return Brain;
-      case 'recommendation':
-        return Lightbulb;
-      case 'connection':
-        return Activity;
-      case 'reflection':
-        return Sparkles;
-      default:
-        return Sparkles;
-    }
-  };
-
-  const IconComponent = getIcon();
+  const IconComponent = ICON_MAP[type] || Sparkles;
 
   return (
     <div 

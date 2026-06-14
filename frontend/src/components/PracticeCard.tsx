@@ -9,6 +9,7 @@ export interface Practice {
   goal: string;
   description: string;
   gradientClass: string;
+  benefits?: string[];
 }
 
 interface PracticeCardProps {

@@ -8,9 +8,9 @@ import {
   Sparkles, 
   Menu, 
   X, 
-  Heart,
   AlertCircle
 } from 'lucide-react';
+import circleLogo from '../assets/balanceflow-circle-logo.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -56,18 +56,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentTab, setCurrent
         borderTop: 'none',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            background: 'linear-gradient(135deg, var(--color-teal) 0%, var(--color-lavender) 100%)',
-            width: '32px',
-            height: '32px',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#060a12',
-          }}>
-            <Heart size={18} fill="#060a12" />
-          </div>
+          <img 
+            src={circleLogo} 
+            alt="BalanceFlow Logo" 
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              boxShadow: '0 0 10px rgba(20, 184, 166, 0.25)',
+              border: '1px solid rgba(20, 184, 166, 0.2)',
+              objectFit: 'contain'
+            }}
+          />
           <span style={{ 
             fontFamily: 'var(--font-headings)', 
             fontWeight: 700, 
@@ -77,7 +77,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentTab, setCurrent
             WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.03em'
           }}>
-            BalanceFlow <span style={{ color: 'var(--color-teal-light)', WebkitTextFillColor: 'initial', fontWeight: 400, fontSize: '0.85rem', marginLeft: '2px', border: '1px solid rgba(20, 184, 166, 0.3)', padding: '2px 6px', borderRadius: '4px', background: 'rgba(20, 184, 166, 0.08)' }}>AI</span>
+            BalanceFlow
           </span>
         </div>
         
@@ -120,41 +120,84 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentTab, setCurrent
           backgroundColor: 'rgba(6, 10, 18, 0.45)',
         }}>
           {/* Logo Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '36px', padding: '0 8px' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, var(--color-teal) 0%, var(--color-lavender) 100%)',
-              width: '36px',
-              height: '36px',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#060a12',
-              boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)'
-            }}>
-              <Heart size={20} fill="#060a12" />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '28px', padding: '0 8px', width: '100%', textAlign: 'center' }}>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              {/* Subtle Ambient Glow Backdrop */}
+              <div style={{
+                position: 'absolute',
+                width: '140px',
+                height: '140px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(20, 184, 166, 0.12) 0%, rgba(139, 92, 246, 0.08) 50%, transparent 100%)',
+                filter: 'blur(8px)',
+                zIndex: 0,
+                pointerEvents: 'none'
+              }} />
+              <img 
+                src={circleLogo} 
+                alt="BalanceFlow Logo" 
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  boxShadow: '0 0 20px rgba(20, 184, 166, 0.2), 0 0 10px rgba(139, 92, 246, 0.15), 0 8px 24px rgba(0, 0, 0, 0.45)',
+                  border: '1px solid rgba(20, 184, 166, 0.2)',
+                  objectFit: 'contain',
+                  position: 'relative',
+                  zIndex: 1
+                }}
+              />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
               <span style={{ 
                 fontFamily: 'var(--font-headings)', 
                 fontWeight: 700, 
-                fontSize: '1.25rem',
+                fontSize: '1.6rem',
                 lineHeight: 1.1,
-                letterSpacing: '-0.03em',
-                color: 'var(--color-beige)'
+                letterSpacing: '-0.02em',
+                color: 'var(--color-beige)',
+                textAlign: 'center'
               }}>
-                BalanceFlow AI
+                BalanceFlow
               </span>
               <span style={{ 
-                fontSize: '0.7rem', 
+                fontSize: '0.52rem', 
                 color: 'var(--color-teal-light)', 
-                fontWeight: 600,
-                letterSpacing: '0.05em',
+                fontWeight: 300,
+                letterSpacing: '0.22em',
                 textTransform: 'uppercase',
-                marginTop: '2px'
+                lineHeight: 1.4,
+                opacity: 0.7,
+                marginTop: '4px',
+                textAlign: 'center'
               }}>
-                AI Wellness Companion
+                Mindful Wellness<br />Companion
               </span>
+            </div>
+            <div style={{ 
+              position: 'relative', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100px', 
+              height: '9px', 
+              marginTop: '12px' 
+            }}>
+              {/* Gradient Line */}
+              <div style={{ 
+                width: '100%', 
+                height: '1px', 
+                background: 'linear-gradient(to right, transparent, rgba(20, 184, 166, 0.35), rgba(139, 92, 246, 0.35), transparent)' 
+              }} />
+              {/* Glowing Center Dot */}
+              <div style={{ 
+                position: 'absolute', 
+                width: '4px', 
+                height: '4px', 
+                borderRadius: '50%', 
+                backgroundColor: '#fff', 
+                boxShadow: '0 0 6px rgba(20, 184, 166, 0.8), 0 0 2px rgba(139, 92, 246, 0.6)' 
+              }} />
             </div>
           </div>
 
@@ -205,9 +248,24 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentTab, setCurrent
             <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
               Companion Status
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-green-soft)', boxShadow: '0 0 8px var(--color-green-soft)' }}></div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Mindful & Active</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-green-soft)', boxShadow: '0 0 6px var(--color-green-soft)' }}></div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Mindful & Active</span>
+              </div>
+              <img 
+                src={circleLogo} 
+                alt="BalanceFlow Logo" 
+                style={{ 
+                  width: '39px', 
+                  height: '39px', 
+                  opacity: 0.95, 
+                  borderRadius: '50%', 
+                  boxShadow: '0 0 10px rgba(20, 184, 166, 0.5), 0 0 4px rgba(20, 184, 166, 0.2)', 
+                  border: '1px solid rgba(20, 184, 166, 0.35)',
+                  objectFit: 'contain'
+                }} 
+              />
             </div>
           </div>
         </aside>
@@ -322,14 +380,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentTab, setCurrent
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                 <AlertCircle size={14} style={{ color: 'var(--color-lavender)' }} />
-                <span>Disclaimer: BalanceFlow AI is a self-guided personal companion.</span>
+                <span>Disclaimer: BalanceFlow is a self-guided personal companion.</span>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
                 All recommendations, insights, and summaries are generated based on your logged trends for reflection. 
                 This tool is not intended for diagnostic purposes, medical therapy, or clinical support.
               </p>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                © {new Date().getFullYear()} BalanceFlow AI. Mindful tools for a calm life.
+                © {new Date().getFullYear()} BalanceFlow. Mindful tools for a calm life.
               </div>
             </div>
           </footer>

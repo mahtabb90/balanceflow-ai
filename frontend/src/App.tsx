@@ -32,7 +32,6 @@ import {
   Plus,
   Send,
   MessageSquare,
-  Info,
   Trash2,
   RefreshCw
 } from 'lucide-react';
@@ -520,49 +519,186 @@ export default function App() {
   const getDynamicAIInsights = () => {
     if (entries.length === 0) {
       return {
-        pattern: "To reveal stress patterns and recovery rhythms, begin logging your daily check-in logs.",
-        recommendation: "A gentle goal could be trying a 5-Minute Breathing Reset today to record your first wellness logs.",
-        stress: "No stress entries found yet. Regular practice entries help map body tension release patterns.",
-        sleep: "Sleep insights will generate once sleep quality is logged during check-ins.",
-        reflection: "Observation reflections will display themes here after saving your thoughts."
+        pattern: { badge: "Early Pattern", content: "" },
+        recommendation: { badge: "Gentle Suggestion", content: "" },
+        stress: { badge: "Early Pattern", content: "" },
+        sleep: { badge: "Early Pattern", content: "" },
+        reflection: { badge: "Reflection Theme", content: "", prompt: "" },
+        focus: { badge: "Gentle Suggestion", content: "" }
       };
     }
 
-    // Rule 1: Stress Reduction
-    const hasTensionRelease = entries.some(e => e.stressAfter < e.stressBefore);
-    const stressInsight = hasTensionRelease 
-      ? `Your data suggests your practice is connected with lower stress after sessions. On average, you log a ${avgStressReductionPercent}% drop in body tension.`
-      : "You may notice steadier stress patterns by adding short breathing holds into your practice.";
+    const totalMinutes = entries.reduce((sum, item) => sum + item.duration, 0);
+    const avgStressBefore = entries.reduce((sum, item) => sum + item.stressBefore, 0) / entries.length;
+    const avgStressAfter = entries.reduce((sum, item) => sum + item.stressAfter, 0) / entries.length;
+    const avgSleep = entries.reduce((sum, item) => sum + item.sleepQuality, 0) / entries.length;
 
-    // Rule 2: Sleep Connection
-    const goodSleepEntries = entries.filter(e => e.sleepQuality >= 7.5);
-    const sleepInsight = goodSleepEntries.length > 0
-      ? `Your sleep tracking is linked with higher morning energy. Days following deep rest (7.5+/10) are associated with steady morning energy.`
-      : "You may notice better rest on days when you log a calmer evening stretch practice.";
+    const themesList = ['calm', 'tired', 'stress', 'sleep', 'focus', 'energy', 'gratitude', 'tension', 'balance'];
+    const themeDisplayNames: Record<string, string> = {
+      calm: 'Calm',
+      tired: 'Tired',
+      stress: 'Stress',
+      sleep: 'Sleep',
+      focus: 'Focus',
+      energy: 'Energy',
+      gratitude: 'Gratitude',
+      tension: 'Tension',
+      balance: 'Balance'
+    };
 
-    // Rule 3: Pattern Summary
-    const patternInsight = totalPracticeMinutes > 60
-      ? `Your wellness patterns indicate over ${totalPracticeMinutes} minutes of mindful practice this week. This regular rhythm is linked with reported deep rest.`
-      : "A gentle goal could be logging 2 short 10-minute sessions this week to establish your wellness rhythm.";
+    if (entries.length >= 1 && entries.length <= 2) {
+      const sessionWord = entries.length === 1 ? "session" : "sessions";
+      
+      const matchedThemes: string[] = [];
+      entries.forEach(e => {
+        if (e.reflection) {
+          const text = e.reflection.toLowerCase();
+          themesList.forEach(theme => {
+            if (text.includes(theme) && !matchedThemes.includes(theme)) {
+              matchedThemes.push(theme);
+            }
+          });
+        }
+      });
 
-    // Rule 4: Energy Lift
-    const hasEnergyLift = entries.some(e => e.energyAfter > e.energyBefore);
-    const energyInsight = hasEnergyLift
-      ? "Your logged entries suggest your sessions are connected with a gentle energy lift after completion."
-      : "To support focus, trying a 5-Minute Breathing Reset at 2:00 PM may provide a gentle energy release.";
+      let reflectionContent = "Continue logging reflections to discover recurring wellness themes.";
+      let reflectionBadge = "Early Pattern";
+      if (matchedThemes.length > 0) {
+        const capitalized = matchedThemes.map(t => themeDisplayNames[t] || t);
+        if (capitalized.length === 1) {
+          reflectionContent = `Common theme observed this week:\n• ${capitalized[0]}`;
+        } else {
+          reflectionContent = `Common themes observed this week:\n${capitalized.map(t => `• ${t}`).join('\n')}`;
+        }
+        reflectionBadge = "Reflection Theme";
+      }
 
-    // Rule 5: Reflections Themes
-    const latestRef = entries.filter(e => e.reflection.trim() !== '').pop();
-    const reflectionInsight = latestRef
-      ? `Your latest reflection suggests: "${latestRef.reflection}". Observing these thoughts helps connect mindful states with recovery.`
-      : "You haven't logged any reflection thoughts yet. Type a short note in your next entry to track mental calm.";
+      return {
+        pattern: {
+          badge: "Early Pattern",
+          content: `This week you completed ${totalMinutes} minutes across ${entries.length} ${sessionWord}. Your consistency suggests a healthy mindfulness routine and a growing wellness habit.`
+        },
+        recommendation: {
+          badge: "Gentle Suggestion",
+          content: "A gentle goal could be logging 2–3 sessions this week. This supports your emerging self-care habit."
+        },
+        stress: {
+          badge: "Early Pattern",
+          content: "Notice how your stress changes before and after each practice. Paying attention to these shifts supports body tension release."
+        },
+        sleep: {
+          badge: "Early Pattern",
+          content: "Notice how your daily energy changes after resting. Connecting sleep quality with daytime energy helps map your recovery rhythm."
+        },
+        reflection: {
+          badge: reflectionBadge,
+          content: reflectionContent,
+          prompt: "How did you feel right after your last session compared to before?"
+        },
+        focus: {
+          badge: "Gentle Suggestion",
+          content: "Try 2 short sessions this week. Select beginner yoga flows or quick breathing resets in the library."
+        }
+      };
+    }
+
+    // 1. Pattern Summary
+    const sessionWord = entries.length === 1 ? "session" : "sessions";
+    const patternContent = `This week you completed ${totalMinutes} minutes across ${entries.length} ${sessionWord}. Your consistency suggests a healthy mindfulness routine and a growing wellness habit.`;
+    let patternBadge = "Weekly Pattern";
+    if (entries.length >= 5) {
+      patternBadge = "Strong Signal";
+    }
+
+    // 2. Gentle Recommendation
+    const yogaCount = entries.filter(e => e.type === 'Yoga').length;
+    const medCount = entries.filter(e => e.type === 'Meditation').length;
+    const breathCount = entries.filter(e => e.type === 'Breathing').length;
+
+    let favoriteType = 'Yoga';
+    let maxCount = yogaCount;
+    let recContent = "Yoga appears to be your most consistent practice type this week. Continuing with gentle flows may support your daily balance.";
+
+    if (medCount > maxCount) {
+      favoriteType = 'Meditation';
+      maxCount = medCount;
+      recContent = "Meditation sequences appear to be your most consistent practice type this week. Continuing with seated pauses may support mental clarity.";
+    }
+    if (breathCount > maxCount) {
+      favoriteType = 'Breathing';
+      maxCount = breathCount;
+      recContent = "Breathing resets appear to be your most consistent practice type this week. Continuing with rhythmic breathing may support natural recovery.";
+    }
+
+    if (breathCount > 0 && favoriteType !== 'Breathing') {
+      recContent += " Additionally, incorporating short breathing resets during afternoon dips may support daily focus.";
+    }
+
+    // 3. Stress Trend Insight
+    let stressContent = "";
+    let stressBadge = "Early Pattern";
+    if (avgStressAfter < avgStressBefore) {
+      const stressReductionPercent = Math.round(((avgStressBefore - avgStressAfter) / avgStressBefore) * 100);
+      stressContent = `Your data suggests your sessions may be connected with lower stress after practice. On average, your logged tension decreases by ${stressReductionPercent}%.`;
+      stressBadge = "Strong Signal";
+    } else {
+      stressContent = "Observe how your stress changes before and after sessions. Paying attention to these shifts may support body tension awareness.";
+    }
+
+    // 4. Sleep & Energy Connection
+    let sleepContent = "";
+    let sleepBadge = "Early Pattern";
+    if (avgSleep >= 7.0) {
+      sleepContent = "Your sleep logs suggest a steady recovery rhythm this week. You may notice higher energy levels on days following deep rest.";
+      sleepBadge = "Strong Signal";
+    } else {
+      sleepContent = "Your sleep logs suggest your recovery rhythm has room to settle. Try aligning evening stretches or breathing resets to support quiet rest.";
+    }
+
+    // 5. Reflection Themes
+    const matchedThemes: string[] = [];
+    entries.forEach(e => {
+      if (e.reflection) {
+        const text = e.reflection.toLowerCase();
+        themesList.forEach(theme => {
+          if (text.includes(theme) && !matchedThemes.includes(theme)) {
+            matchedThemes.push(theme);
+          }
+        });
+      }
+    });
+
+    let reflectionContent = "";
+    let reflectionBadge = "Early Pattern";
+    if (matchedThemes.length > 0) {
+      const capitalized = matchedThemes.map(t => themeDisplayNames[t] || t);
+      if (capitalized.length === 1) {
+        reflectionContent = `Common theme observed this week:\n• ${capitalized[0]}`;
+      } else {
+        reflectionContent = `Common themes observed this week:\n${capitalized.map(t => `• ${t}`).join('\n')}`;
+      }
+      reflectionBadge = "Reflection Theme";
+    } else {
+      reflectionContent = "Continue logging reflections to discover recurring wellness themes.";
+    }
+
+    // 6. Next Week Focus
+    let focusContent = "A gentle goal could be incorporating 2 short sessions this week to establish your wellness rhythm.";
+    if (avgSleep < 6.0) {
+      focusContent = "Try an evening stretch or sleep meditation. Focus on quiet breathing before rest to support recovery.";
+    } else if (avgStressBefore >= 5.0 || avgStressAfter >= 5.0) {
+      focusContent = "Try one 5-minute breathing reset after a stressful day. Focus on slow, regular cycles to soothe physical tension.";
+    } else if (yogaCount >= 2) {
+      focusContent = "Continue with 3 gentle yoga sessions. Consistent movement supports posture alignment and mobility.";
+    }
 
     return {
-      pattern: patternInsight,
-      recommendation: energyInsight,
-      stress: stressInsight,
-      sleep: sleepInsight,
-      reflection: reflectionInsight
+      pattern: { badge: patternBadge, content: patternContent },
+      recommendation: { badge: "Gentle Suggestion", content: recContent },
+      stress: { badge: stressBadge, content: stressContent },
+      sleep: { badge: sleepBadge, content: sleepContent },
+      reflection: { badge: reflectionBadge, content: reflectionContent, prompt: "What does 'finding quiet' mean to you in the context of your daily routine?" },
+      focus: { badge: "Gentle Suggestion", content: focusContent }
     };
   };
 
@@ -1336,7 +1472,7 @@ export default function App() {
                     title="AI Weekly Summary" 
                     badge="AI Synthesis"
                     type="pattern"
-                    content={aiInsights.pattern}
+                    content={aiInsights.pattern.content}
                     reflectionPrompt="How do you feel on mornings when you make time for a short flow compared to mornings when you don't?"
                     onReflectClick={() => {
                       setCurrentTab('today');
@@ -1440,85 +1576,115 @@ export default function App() {
         {currentTab === 'insights' && (
           <div>
             <div style={{ textAlign: 'left', marginBottom: '24px' }}>
-              <span className="badge badge-lavender" style={{ marginBottom: '8px' }}>AI Companion</span>
-              <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '6px' }}>Behavioral Insights & Reflection</h2>
+              <span className="badge badge-lavender" style={{ marginBottom: '8px' }}>Mindful Wellness Companion</span>
+              <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '6px' }}>Your Wellness Insights</h2>
               <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-                Analysis of logs to assist your personal self-reflection. These summaries highlight wellness patterns in your logged entries.
+                Review patterns, trends and reflections from your wellness practice.
               </p>
             </div>
 
-            <div className="app-grid app-grid-2">
-              <InsightCard 
-                title="Pattern Summary" 
-                badge="Trend Analysis"
-                type="pattern"
-                content={aiInsights.pattern}
-              />
-
-              <InsightCard 
-                title="Gentle Recommendation" 
-                badge="Micro-Action"
-                type="recommendation"
-                content={aiInsights.recommendation}
-              />
-
-              <InsightCard 
-                title="Stress Trend Insight" 
-                badge="Stress Patterns"
-                type="connection"
-                content={aiInsights.stress}
-              />
-
-              <InsightCard 
-                title="Sleep & Energy Connection" 
-                badge="Recovery Rhythm"
-                type="connection"
-                content={aiInsights.sleep}
-              />
-
-              <InsightCard 
-                title="Reflection Summary" 
-                badge="Mindful Themes"
-                type="reflection"
-                content={aiInsights.reflection}
-                reflectionPrompt="What does 'finding quiet' mean to you in the context of your daily routine?"
-                onReflectClick={() => {
-                  setCurrentTab('today');
-                  setTimeout(() => {
-                    const el = document.querySelector('.reflection-input');
-                    if (el) (el as HTMLInputElement).focus();
-                  }, 150);
-                }}
-              />
-
+            {entries.length === 0 ? (
+              /* Beautiful Empty State */
               <div className="glass-panel" style={{
-                padding: '24px',
-                border: '1px dashed rgba(167, 139, 250, 0.3)',
+                padding: '60px 24px',
+                textAlign: 'center',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
                 alignItems: 'center',
-                textAlign: 'center',
-                gap: '12px'
+                gap: '20px',
+                border: '1px dashed rgba(255, 255, 255, 0.1)',
+                marginTop: '12px'
               }}>
                 <div style={{
-                  width: '44px',
-                  height: '44px',
+                  width: '56px',
+                  height: '56px',
                   borderRadius: '50%',
                   backgroundColor: 'rgba(167, 139, 250, 0.08)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--color-lavender-light)'
+                  marginBottom: '8px',
+                  border: '1.5px solid rgba(167, 139, 250, 0.2)',
+                  boxShadow: '0 0 16px rgba(167, 139, 250, 0.15)'
                 }}>
-                  <Info size={20} />
+                  <img src={circleLogo} alt="BalanceFlow" style={{ width: '30px', height: '30px' }} />
                 </div>
-                <h4 style={{ fontSize: '1rem', color: '#fff' }}>About AI Insights</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '320px' }}>
-                  These reflection cues are shared to help you observe trends in your logged entries. They do not constitute therapeutic or medical advice.
+                <h3 style={{ fontSize: '1.4rem', color: '#fff', fontFamily: 'var(--font-headings)' }}>
+                  Your insights will grow with your practice.
+                </h3>
+                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', lineHeight: '1.5' }}>
+                  Log a few yoga, meditation or breathing sessions to discover patterns in your stress, energy, mood and sleep.
                 </p>
+                <button onClick={() => handleOpenEntryModal()} className="btn btn-primary" style={{ marginTop: '8px' }}>
+                  <Plus size={16} />
+                  <span>Log First Practice</span>
+                </button>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Grid of Cards */}
+                <div className="app-grid app-grid-2">
+                  <InsightCard 
+                    title="Pattern Summary" 
+                    badge={aiInsights.pattern.badge}
+                    type="pattern"
+                    content={aiInsights.pattern.content}
+                  />
+
+                  <InsightCard 
+                    title="Gentle Recommendation" 
+                    badge={aiInsights.recommendation.badge}
+                    type="recommendation"
+                    content={aiInsights.recommendation.content}
+                  />
+
+                  <InsightCard 
+                    title="Stress Trend Insight" 
+                    badge={aiInsights.stress.badge}
+                    type="connection"
+                    content={aiInsights.stress.content}
+                  />
+
+                  <InsightCard 
+                    title="Sleep & Energy Connection" 
+                    badge={aiInsights.sleep.badge}
+                    type="connection"
+                    content={aiInsights.sleep.content}
+                  />
+
+                  <InsightCard 
+                    title="Reflection Summary" 
+                    badge={aiInsights.reflection.badge}
+                    type="reflection"
+                    content={aiInsights.reflection.content}
+                    reflectionPrompt={aiInsights.reflection.prompt}
+                    onReflectClick={() => {
+                      setCurrentTab('today');
+                      setTimeout(() => {
+                        const el = document.querySelector('.reflection-input');
+                        if (el) (el as HTMLInputElement).focus();
+                      }, 150);
+                    }}
+                  />
+
+                  <InsightCard 
+                    title="Next Week Focus" 
+                    badge={aiInsights.focus.badge}
+                    type="recommendation"
+                    content={aiInsights.focus.content}
+                  />
+                </div>
+
+                <div style={{ marginTop: '24px' }}>
+                  <InsightCard 
+                    title="How insights are generated"
+                    badge="Disclaimer"
+                    type="insight"
+                    content="Insights are generated from your logged wellness activities and reflections. They are designed to support personal awareness, habit tracking and self-reflection. They are not medical advice, diagnosis or treatment."
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
 

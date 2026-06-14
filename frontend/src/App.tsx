@@ -8,7 +8,7 @@ import balanceSpaceGlow from './assets/balance_space_glow.png';
 import type { Practice } from './components/PracticeCard';
 import { ChartCard } from './components/ChartCard';
 import { InsightCard } from './components/InsightCard';
-import { getAIInsights } from './services/aiInsightService';
+import { getAIInsights, getWellnessMetrics } from './services/aiInsightService';
 import { BreathingCircle } from './components/BreathingCircle';
 import { EntryModal } from './components/EntryModal';
 import { PracticeDetailModal } from './components/PracticeDetailModal';
@@ -385,61 +385,16 @@ export default function App() {
   ];
 
   // Dynamic calculations from database
-  const totalPracticeMinutes = entries.reduce((sum, item) => sum + item.duration, 0);
-  
-  // Calculate active consecutive streak from set of unique days
-  const activeDays = new Set(entries.map(item => item.day));
-  const streak = activeDays.size;
-
-  // Yoga impact score (formula is a combination of stress drop and duration minutes)
-  const calculateYogaImpactScore = () => {
-    if (entries.length === 0) return 0;
-    const totalTensionBefore = entries.reduce((sum, item) => sum + item.stressBefore, 0);
-    const totalTensionAfter = entries.reduce((sum, item) => sum + item.stressAfter, 0);
-    
-    // Average Tension Drop
-    const avgTensionDrop = totalTensionBefore > 0 
-      ? ((totalTensionBefore - totalTensionAfter) / totalTensionBefore) * 100 
-      : 0;
-      
-    const avgEnergyAfter = entries.reduce((sum, item) => sum + item.energyAfter, 0) / entries.length;
-    
-    return Math.min(100, Math.round((avgTensionDrop * 0.75) + (avgEnergyAfter * 3.5) + (entries.length * 1.5)));
-  };
-  
-  const yogaImpactScore = calculateYogaImpactScore();
-
-  // Weekly Report counts
-  const yogaSessionsCount = entries.filter(e => e.type === 'Yoga').length;
-  const meditationSessionsCount = entries.filter(e => e.type === 'Meditation').length;
-  const breathingSessionsCount = entries.filter(e => e.type === 'Breathing').length;
-
-  const totalStressBefore = entries.reduce((sum, item) => sum + item.stressBefore, 0);
-  const totalStressAfter = entries.reduce((sum, item) => sum + item.stressAfter, 0);
-  const avgStressReductionPercent = totalStressBefore > 0 
-    ? Math.round(((totalStressBefore - totalStressAfter) / totalStressBefore) * 100) 
-    : 0;
-
-  // Calculate best practice type based on average tension reduction
-  const getBestPracticeType = () => {
-    if (entries.length === 0) return 'None';
-    const categories: ('Yoga' | 'Meditation' | 'Breathing')[] = ['Yoga', 'Meditation', 'Breathing'];
-    let bestCat = 'None';
-    let maxReduction = -1;
-
-    categories.forEach(cat => {
-      const catEntries = entries.filter(e => e.type === cat);
-      if (catEntries.length === 0) return;
-      const reduction = catEntries.reduce((sum, e) => sum + (e.stressBefore - e.stressAfter), 0) / catEntries.length;
-      if (reduction > maxReduction) {
-        maxReduction = reduction;
-        bestCat = cat;
-      }
-    });
-
-    return bestCat === 'Breathing' ? 'Breathing Reset' : bestCat === 'Meditation' ? 'Meditation' : 'Yoga Flow';
-  };
-  const bestPracticeType = getBestPracticeType();
+  const {
+    totalPracticeMinutes,
+    streak,
+    yogaImpactScore,
+    yogaSessionsCount,
+    meditationSessionsCount,
+    breathingSessionsCount,
+    avgStressReductionPercent,
+    bestPracticeType
+  } = getWellnessMetrics(entries);
 
   // Aggregate entries for Recharts Compatibility
   const getAggregatedLogs = (): {
@@ -453,6 +408,19 @@ export default function App() {
   }[] => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     
+    interface DaySummary {
+      minutes: number;
+      stressBeforeSum: number;
+      stressAfterSum: number;
+      stressCount: number;
+      moodSum: number;
+      moodCount: number;
+      energySum: number;
+      energyCount: number;
+      sleepSum: number;
+      sleepCount: number;
+    }
+
     const summaries = days.reduce((acc, d) => {
       acc[d] = {
         minutes: 0,
@@ -467,7 +435,7 @@ export default function App() {
         sleepCount: 0,
       };
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, DaySummary>);
 
     entries.forEach(entry => {
       const d = entry.day;
@@ -1505,20 +1473,24 @@ export default function App() {
       </div>
 
       {/* Practice Detail & Active Guided Timer Modal */}
-      <PracticeDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        practice={selectedPracticeForDetail}
-        onCompleteAndLog={handleCompletePracticeAndLog}
-      />
+      {isDetailModalOpen && selectedPracticeForDetail && (
+        <PracticeDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          practice={selectedPracticeForDetail}
+          onCompleteAndLog={handleCompletePracticeAndLog}
+        />
+      )}
 
       {/* Wellness Entry Popup Dialog Modal */}
-      <EntryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveEntry}
-        prefilledValues={prefilledValues}
-      />
+      {isModalOpen && (
+        <EntryModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveEntry}
+          prefilledValues={prefilledValues}
+        />
+      )}
     </Layout>
   );
 }

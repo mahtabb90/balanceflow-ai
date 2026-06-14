@@ -54,11 +54,9 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
   practice,
   onCompleteAndLog,
 }) => {
-  if (!isOpen || !practice) return null;
-
   const [viewMode, setViewMode] = useState<ViewMode>('detail');
   const [isActive, setIsActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(practice.duration * 60);
+  const [timeLeft, setTimeLeft] = useState(practice ? practice.duration * 60 : 0);
   const [totalElapsed, setTotalElapsed] = useState(0);
   const [soundOn, setSoundOn] = useState(true);
   
@@ -69,15 +67,10 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
   const timerRef = useRef<number | null>(null);
   const breathTimerRef = useRef<number | null>(null);
 
-  // Reset states when modal reopens or practice changes
-  useEffect(() => {
-    setViewMode('detail');
+  const handleSessionFinished = () => {
     setIsActive(false);
-    setTimeLeft(practice.duration * 60);
-    setTotalElapsed(0);
-    setBreathPhase('Inhale');
-    setBreathSeconds(4);
-  }, [practice, isOpen]);
+    setViewMode('complete');
+  };
 
   // Main countdown timer effect
   useEffect(() => {
@@ -131,10 +124,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
     };
   }, [isActive, viewMode]);
 
-  const handleSessionFinished = () => {
-    setIsActive(false);
-    setViewMode('complete');
-  };
+  if (!isOpen || !practice) return null;
 
   const startSession = () => {
     setViewMode('active');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Check } from 'lucide-react';
 
 interface BreathingCircleProps {
@@ -12,17 +12,6 @@ interface Phase {
   duration: number; // in seconds
   color: string;
 }
-
-export const BreathingCircle: React.FC<BreathingCircleProps> = ({ onLogBreathing }) => {
-  const [exercise, setExercise] = useState<ExerciseType>('box');
-  const [isActive, setIsActive] = useState(false);
-  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(4);
-  const [totalSeconds, setTotalSeconds] = useState(0);
-  const [completedCycles, setCompletedCycles] = useState(0);
-  const [showCompleteCelebration, setShowCompleteCelebration] = useState(false);
-
-  const timerRef = useRef<number | null>(null);
 
   // Exercise Definitions
   const exercises: Record<ExerciseType, { name: string; phases: Phase[]; desc: string }> = {
@@ -54,13 +43,37 @@ export const BreathingCircle: React.FC<BreathingCircleProps> = ({ onLogBreathing
     },
   };
 
+export const BreathingCircle: React.FC<BreathingCircleProps> = ({ onLogBreathing }) => {
+  const [exercise, setExercise] = useState<ExerciseType>('box');
+  const [isActive, setIsActive] = useState(false);
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(4);
+  const [totalSeconds, setTotalSeconds] = useState(0);
+  const [completedCycles, setCompletedCycles] = useState(0);
+  const [showCompleteCelebration, setShowCompleteCelebration] = useState(false);
+
+  const timerRef = useRef<number | null>(null);
+
   const currentExerciseData = exercises[exercise];
   const currentPhase = currentExerciseData.phases[currentPhaseIndex];
 
-  // Initialize phase when changing exercise
-  useEffect(() => {
-    resetExercise();
+  const resetExercise = useCallback(() => {
+    setIsActive(false);
+    setCurrentPhaseIndex(0);
+    setSecondsLeft(exercises[exercise].phases[0].duration);
+    setTotalSeconds(0);
+    setCompletedCycles(0);
+    setShowCompleteCelebration(false);
   }, [exercise]);
+
+  const selectExercise = (type: ExerciseType) => {
+    setExercise(type);
+    setCurrentPhaseIndex(0);
+    setSecondsLeft(exercises[type].phases[0].duration);
+    setTotalSeconds(0);
+    setCompletedCycles(0);
+    setShowCompleteCelebration(false);
+  };
 
   // Breathing Loop
   useEffect(() => {
@@ -94,19 +107,10 @@ export const BreathingCircle: React.FC<BreathingCircleProps> = ({ onLogBreathing
         clearInterval(timerRef.current);
       }
     };
-  }, [isActive, currentPhaseIndex, exercise]);
+  }, [isActive, currentPhaseIndex, exercise, currentExerciseData.phases]);
 
   const toggleActive = () => {
     setIsActive(!isActive);
-  };
-
-  const resetExercise = () => {
-    setIsActive(false);
-    setCurrentPhaseIndex(0);
-    setSecondsLeft(exercises[exercise].phases[0].duration);
-    setTotalSeconds(0);
-    setCompletedCycles(0);
-    setShowCompleteCelebration(false);
   };
 
   const logSession = () => {
@@ -158,7 +162,7 @@ export const BreathingCircle: React.FC<BreathingCircleProps> = ({ onLogBreathing
           <button
             key={type}
             onClick={() => {
-              if (!isActive) setExercise(type);
+              if (!isActive) selectExercise(type);
             }}
             disabled={isActive}
             className="btn"

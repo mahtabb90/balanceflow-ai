@@ -94,6 +94,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
         fontSize: '0.92rem',
         color: 'var(--text-secondary)',
         lineHeight: '1.5',
+        whiteSpace: 'pre-wrap'
       }}>
         {content}
       </p>

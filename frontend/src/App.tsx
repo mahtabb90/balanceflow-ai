@@ -248,7 +248,7 @@ export default function App() {
 
     setEntries(prev => [...prev, entry]);
     setIsModalOpen(false);
-    triggerToast("Entry saved. Your dashboard has been updated.");
+    triggerToast("Session logged. Your dashboard has been updated.");
     
     // Automatically direct to Dashboard to see updates
     setCurrentTab('dashboard');

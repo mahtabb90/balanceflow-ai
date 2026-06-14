@@ -24,6 +24,30 @@ interface PracticeDetailModalProps {
 type ViewMode = 'detail' | 'active' | 'complete';
 type BreathPhase = 'Inhale' | 'Hold' | 'Exhale' | 'Rest';
 
+const STEPS_BY_TYPE: Record<'Yoga' | 'Meditation' | 'Breathing', { name: string; instruction: string }[]> = {
+  Yoga: [
+    { name: 'Prepare your space', instruction: 'Find a quiet, clear area to move. Stand or sit comfortably.' },
+    { name: 'Move gently', instruction: 'Start slowly warming up your body. Flow through gentle neck circles and shoulder rolls.' },
+    { name: 'Breathe with awareness', instruction: 'Coordinate your movements with steady breathing. Inhale as you lift, exhale as you fold.' },
+    { name: 'Slow down', instruction: 'Gently lower your body. Allow your muscles to relax and let your breath settle into a natural pace.' },
+    { name: 'Reflect', instruction: 'Come to a still position. Rest silently and notice the physical release and stability.' }
+  ],
+  Meditation: [
+    { name: 'Sit comfortably', instruction: 'Find an easy seated posture. Keep your spine tall yet relaxed.' },
+    { name: 'Notice your breath', instruction: 'Shift your focus to the inflow and outflow of your breath. Feel the natural rise and fall of your chest.' },
+    { name: 'Relax your shoulders', instruction: 'Let go of any physical tightness in your upper body. Soften your jaw.' },
+    { name: 'Return gently', instruction: 'If your mind wanders, gently guide your focus back to the sensation of breathing.' },
+    { name: 'Reflect', instruction: 'Allow your awareness to expand. Take a quiet moment to observe your state of mind.' }
+  ],
+  Breathing: [
+    { name: 'Inhale slowly', instruction: 'Draw breath deep into your belly through your nose, letting your lungs expand gently (4 seconds).' },
+    { name: 'Hold softly', instruction: 'Pause at the top of your breath. Settle into the calm space of stillness (4 seconds).' },
+    { name: 'Exhale gently', instruction: 'Release the breath slowly through your mouth, letting go of tension (4 seconds).' },
+    { name: 'Repeat', instruction: 'Establish a steady, comforting rhythm. Flow smoothly from one breath cycle to the next.' },
+    { name: 'Notice calm', instruction: 'Let your breath return to its normal rhythm. Feel the steady centering effect.' }
+  ]
+};
+
 export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
   isOpen,
   onClose,
@@ -124,6 +148,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
   const fastForward = () => {
     // Fast forward to last 5 seconds to test completion mechanics
     setTimeLeft(5);
+    setTotalElapsed(practice.duration * 60 - 5);
   };
 
   // Convert seconds to MM:SS format
@@ -182,6 +207,10 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
     setViewMode('detail');
   };
 
+  const currentSteps = practice ? (STEPS_BY_TYPE[practice.type] || STEPS_BY_TYPE['Yoga']) : [];
+  const currentStepIdx = practice ? Math.min(4, Math.floor((totalElapsed / (practice.duration * 60)) * 5)) : 0;
+  const currentStep = currentSteps[currentStepIdx] || { name: '', instruction: '' };
+
   return (
     <div style={{
       position: 'fixed',
@@ -221,6 +250,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
               style={{
                 height: '160px',
                 width: '100%',
+                flexShrink: 0,
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
@@ -282,7 +312,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
             </div>
 
             {/* Content Body */}
-            <div style={{ padding: '24px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ padding: '36px 24px 24px 24px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', marginBottom: '8px', fontFamily: 'var(--font-headings)' }}>
                   {practice.title}
@@ -436,36 +466,17 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                 </button>
 
                 <button 
-                  onClick={() => onCompleteAndLog(practice)}
-                  className="btn"
+                  onClick={onClose}
+                  className="btn btn-secondary"
                   style={{
                     width: '100%',
                     justifyContent: 'center',
                     padding: '12px',
                     borderRadius: '12px',
                     fontSize: '0.88rem',
-                    fontWeight: 600,
-                    backgroundColor: 'rgba(52, 211, 153, 0.08)',
-                    border: '1px solid rgba(52, 211, 153, 0.2)',
-                    color: 'var(--color-green-soft)'
-                  }}
-                >
-                  <Check size={16} style={{ marginRight: '6px' }} />
-                  <span>Complete & Log Session</span>
-                </button>
-
-                <button 
-                  onClick={onClose}
-                  className="btn btn-secondary"
-                  style={{
-                    width: '100%',
-                    justifyContent: 'center',
-                    padding: '10px',
-                    borderRadius: '12px',
-                    fontSize: '0.85rem',
-                    border: 'none',
-                    backgroundColor: 'transparent',
-                    color: 'var(--text-muted)'
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                    color: 'var(--text-secondary)'
                   }}
                 >
                   Back to Library
@@ -477,34 +488,81 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
 
         {/* Guided Session View */}
         {viewMode === 'active' && (
-          <div style={{ padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '28px', textAlign: 'center' }}>
+          <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center' }}>
+            
             {/* Header section */}
             <div>
               <span className={`badge ${
                 practice.type === 'Yoga' ? 'badge-teal' : practice.type === 'Meditation' ? 'badge-lavender' : 'badge-orange'
               }`} style={{ marginBottom: '8px' }}>
-                Guided {practice.type}
+                Guided {practice.type} ({practice.duration} min)
               </span>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff', fontFamily: 'var(--font-headings)' }}>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff', fontFamily: 'var(--font-headings)', margin: 0 }}>
                 {practice.title}
               </h3>
             </div>
 
-            {/* Visual breathing guide aura */}
+            {/* Progress Indicator (5 horizontal lines) */}
+            <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '360px', marginTop: '4px' }}>
+              {[0, 1, 2, 3, 4].map((idx) => {
+                const isCompleted = idx < currentStepIdx;
+                const isActiveStep = idx === currentStepIdx;
+                return (
+                  <div 
+                    key={idx}
+                    style={{
+                      flex: 1,
+                      height: '4px',
+                      borderRadius: '2px',
+                      backgroundColor: isCompleted 
+                        ? 'var(--color-teal)' 
+                        : isActiveStep 
+                          ? 'var(--color-lavender-light)' 
+                          : 'rgba(255, 255, 255, 0.1)',
+                      boxShadow: isActiveStep ? '0 0 8px var(--color-lavender-light)' : 'none',
+                      transition: 'all 0.3s ease'
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Current Step description */}
+            <div style={{ minHeight: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '6px', maxWidth: '400px' }}>
+              <span style={{ 
+                fontSize: '0.82rem', 
+                fontWeight: 600, 
+                color: 'var(--color-teal-light)', 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.08em' 
+              }}>
+                Step {currentStepIdx + 1} of 5: {currentStep.name}
+              </span>
+              <p style={{ 
+                fontSize: '0.92rem', 
+                color: 'var(--text-secondary)', 
+                lineHeight: '1.45',
+                margin: 0
+              }}>
+                {currentStep.instruction}
+              </p>
+            </div>
+
+            {/* Visual breathing guide aura / countdown */}
             <div style={{
               position: 'relative',
-              width: '240px',
-              height: '240px',
+              width: '180px',
+              height: '180px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '10px 0'
+              margin: '5px 0'
             }}>
               {/* Pulsing glow circles */}
               <div style={{
                 position: 'absolute',
-                width: '180px',
-                height: '180px',
+                width: '130px',
+                height: '130px',
                 borderRadius: '50%',
                 background: `radial-gradient(circle, ${getPhaseColor()}18 0%, transparent 70%)`,
                 transform: `scale(${getBreathScale() * 1.15})`,
@@ -516,8 +574,8 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
               {/* Pulsing ring outline */}
               <div style={{
                 position: 'absolute',
-                width: '140px',
-                height: '140px',
+                width: '100px',
+                height: '100px',
                 borderRadius: '50%',
                 border: `2px solid ${getPhaseColor()}`,
                 transform: `scale(${getBreathScale()})`,
@@ -528,8 +586,8 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
 
               {/* Center timer / countdown display */}
               <div style={{
-                width: '110px',
-                height: '110px',
+                width: '80px',
+                height: '80px',
                 borderRadius: '50%',
                 backgroundColor: 'rgba(6, 10, 18, 0.9)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -541,7 +599,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                 boxShadow: 'var(--shadow-md)'
               }}>
                 <span style={{
-                  fontSize: '1.35rem',
+                  fontSize: '1.15rem',
                   fontWeight: 700,
                   fontFamily: 'var(--font-headings)',
                   color: '#fff',
@@ -550,40 +608,18 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                   {formatTime(timeLeft)}
                 </span>
                 <span style={{
-                  fontSize: '0.7rem',
+                  fontSize: '0.55rem',
                   color: 'var(--text-muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  marginTop: '2px'
+                  marginTop: '1px'
                 }}>
                   Remaining
                 </span>
               </div>
             </div>
 
-            {/* Breathing Phase Description Text */}
-            <div style={{ minHeight: '65px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <span style={{ 
-                fontSize: '1.15rem', 
-                fontWeight: 600, 
-                color: getPhaseColor(),
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                transition: 'color 0.5s ease',
-                display: 'block',
-                marginBottom: '4px'
-              }}>
-                {isActive ? breathPhase : 'Paused'}
-              </span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic', maxWidth: '300px', display: 'block', margin: '0 auto' }}>
-                {breathPhase === 'Inhale' && 'Slowly fill your lungs with fresh energy...'}
-                {breathPhase === 'Hold' && 'Feel the quiet stillness within...'}
-                {breathPhase === 'Exhale' && 'Gently release all body tension...'}
-                {breathPhase === 'Rest' && 'Settle and prepare for the next breath...'}
-              </span>
-            </div>
-
-            {/* Visual sound wave representation */}
+            {/* Demo Fast Forward Controls */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center', width: '100%' }}>
               <button 
                 onClick={() => setSoundOn(!soundOn)}
@@ -602,7 +638,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
               </button>
               
               {/* Sound wave bars */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '16px', width: '80px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '14px', width: '60px' }}>
                 {[6, 14, 10, 16, 8, 12, 10, 6].map((_, idx) => (
                   <div 
                     key={idx}
@@ -620,7 +656,6 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                 ))}
               </div>
 
-              {/* Fast Forward (Demo Mode) Button */}
               <button 
                 onClick={fastForward}
                 style={{
@@ -635,7 +670,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
                 }}
-                title="Fast Forward for Testing"
+                title="Fast Forward to last 5s for testing"
               >
                 <FastForward size={14} />
                 <span>Demo Fast-Forward</span>
@@ -643,10 +678,10 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '360px', marginTop: '8px' }}>
               <button 
                 onClick={toggleTimer}
-                className="btn btn-primary"
+                className="btn btn-secondary"
                 style={{
                   flex: 1,
                   justifyContent: 'center',
@@ -654,9 +689,9 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                   borderRadius: '12px',
                   fontSize: '0.9rem',
                   fontWeight: 600,
-                  backgroundColor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'var(--color-teal)',
-                  color: isActive ? '#fff' : '#060a12',
-                  border: isActive ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+                  backgroundColor: isActive ? 'rgba(255, 255, 255, 0.04)' : 'rgba(20, 184, 166, 0.1)',
+                  color: isActive ? '#fff' : 'var(--color-teal-light)',
+                  borderColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'rgba(20, 184, 166, 0.2)'
                 }}
               >
                 {isActive ? <Pause size={16} style={{ marginRight: '6px' }} /> : <Play size={16} fill="currentColor" style={{ marginRight: '6px' }} />}
@@ -665,17 +700,16 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
 
               <button 
                 onClick={handleSessionFinished}
-                className="btn"
+                className="btn btn-primary"
                 style={{
-                  flex: 1,
+                  flex: 1.5,
                   justifyContent: 'center',
                   padding: '12px',
                   borderRadius: '12px',
                   fontSize: '0.9rem',
                   fontWeight: 600,
-                  backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                  border: '1px solid rgba(52, 211, 153, 0.3)',
-                  color: 'var(--color-green-soft)'
+                  background: 'linear-gradient(135deg, var(--color-teal) 0%, var(--color-teal-dark) 100%)',
+                  boxShadow: '0 4px 14px rgba(20, 184, 166, 0.2)'
                 }}
               >
                 <Check size={16} style={{ marginRight: '6px' }} />
@@ -694,11 +728,11 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                marginTop: '-8px'
+                marginTop: '4px'
               }}
             >
               <ArrowLeft size={12} />
-              <span>Back to Practice Details</span>
+              <span>Back</span>
             </button>
           </div>
         )}
@@ -722,23 +756,37 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
               <Check size={32} />
             </div>
 
-            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#fff', fontFamily: 'var(--font-headings)' }}>
-              Practice Completed!
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#fff', fontFamily: 'var(--font-headings)', margin: 0 }}>
+              Great job — your session is complete.
             </h3>
-            <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '340px', lineHeight: '1.5' }}>
-              Wonderful job completing your **{practice.title}**! Taking this time encourages calm balance and resets body tension.
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', maxWidth: '340px', lineHeight: '1.5', margin: 0 }}>
+              Take a moment to notice how you feel.
             </p>
 
+            {/* Session Summary Card */}
             <div style={{ 
-              margin: '10px 0', 
-              padding: '10px 20px', 
-              borderRadius: '20px', 
+              width: '100%',
+              maxWidth: '360px',
+              margin: '12px 0', 
+              padding: '16px', 
+              borderRadius: '16px', 
               backgroundColor: 'rgba(255, 255, 255, 0.02)', 
               border: '1px solid rgba(255, 255, 255, 0.06)',
-              fontSize: '0.85rem',
-              color: 'var(--text-muted)'
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
             }}>
-              <span>Logged: <strong>{practice.duration} min</strong> of {practice.type}</span>
+              <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                Session Summary
+              </span>
+              <div style={{ fontSize: '1.05rem', fontWeight: 600, color: '#fff' }}>
+                {practice.title}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                <span>Type: <strong>{practice.type}</strong></span>
+                <span>Duration: <strong>{practice.duration} min</strong></span>
+              </div>
             </div>
 
             <button 
@@ -746,6 +794,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
               className="btn btn-primary"
               style={{
                 width: '100%',
+                maxWidth: '360px',
                 justifyContent: 'center',
                 padding: '14px',
                 borderRadius: '12px',
@@ -760,16 +809,21 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
 
             <button 
               onClick={onClose}
+              className="btn btn-secondary"
               style={{
-                background: 'none',
+                width: '100%',
+                maxWidth: '360px',
+                justifyContent: 'center',
+                padding: '12px',
+                borderRadius: '12px',
+                fontSize: '0.88rem',
                 border: 'none',
+                backgroundColor: 'transparent',
                 color: 'var(--text-muted)',
-                cursor: 'pointer',
-                fontSize: '0.82rem',
-                marginTop: '4px'
+                cursor: 'pointer'
               }}
             >
-              Close without Logging
+              Back to Library
             </button>
           </div>
         )}

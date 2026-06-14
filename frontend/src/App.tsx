@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Layout } from './components/Layout';
 import { StatCard } from './components/StatCard';
 import { PracticeCard } from './components/PracticeCard';
+import circleLogo from './assets/balanceflow-circle-logo.png';
+import wellnessYogaFlow from './assets/wellness_yoga_flow.png';
+import balanceSpaceGlow from './assets/balance_space_glow.png';
 import type { Practice } from './components/PracticeCard';
 import { ChartCard } from './components/ChartCard';
 import { InsightCard } from './components/InsightCard';
@@ -29,7 +32,6 @@ import {
   Plus,
   Send,
   MessageSquare,
-  Smile,
   Info,
   Trash2,
   RefreshCw
@@ -608,7 +610,8 @@ export default function App() {
           <div>
             {/* Hero Section */}
             <div className="glass-panel" style={{
-              padding: '40px 32px',
+              padding: '12px 32px 32px 32px',
+              minHeight: '360px',
               borderRadius: 'var(--border-radius-lg)',
               background: 'linear-gradient(135deg, rgba(14, 32, 37, 0.75) 0%, rgba(13, 15, 34, 0.75) 100%)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -616,65 +619,184 @@ export default function App() {
               overflow: 'hidden',
               marginBottom: '24px',
               textAlign: 'left',
-              boxShadow: 'var(--shadow-lg)'
+              boxShadow: 'var(--shadow-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              boxSizing: 'border-box'
             }}>
               <div style={{ position: 'absolute', top: '-50px', right: '10%', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(20, 184, 166, 0.12) 0%, transparent 75%)', pointerEvents: 'none' }} />
               <div style={{ position: 'absolute', bottom: '-50px', left: '5%', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167, 139, 250, 0.12) 0%, transparent 75%)', pointerEvents: 'none' }} />
 
-              {/* Abstract Yoga Silhouette Illustration with Particles */}
-              <div className="yoga-illustration">
-                <div className="yoga-sun" />
-                <div className="yoga-ring yoga-ring-1" />
-                <div className="yoga-ring yoga-ring-2" />
-                <div className="lotus-figure">
-                  <div className="lotus-head" />
-                  <div className="lotus-torso" />
-                  <div className="lotus-legs" />
-                </div>
-                {/* Floating Particles */}
-                <div className="glow-particle" style={{ bottom: '20%', left: '15%', '--particle-drift': '15px', animationDelay: '0s', width: '4px', height: '4px' } as React.CSSProperties} />
-                <div className="glow-particle" style={{ bottom: '25%', left: '35%', '--particle-drift': '-10px', animationDelay: '1.5s', width: '5px', height: '5px' } as React.CSSProperties} />
-                <div className="glow-particle" style={{ bottom: '30%', left: '55%', '--particle-drift': '20px', animationDelay: '3s', width: '3px', height: '3px' } as React.CSSProperties} />
-                <div className="glow-particle" style={{ bottom: '22%', left: '75%', '--particle-drift': '-8px', animationDelay: '4.5s', width: '4px', height: '4px' } as React.CSSProperties} />
-              </div>
+              {/* Background Flowing Waves extending from Logo on the right toward the center */}
+              <svg 
+                style={{
+                  position: 'absolute',
+                  top: '0',
+                  right: '0',
+                  width: '65%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                  opacity: 0.45,
+                  overflow: 'visible'
+                }}
+                viewBox="0 0 500 200"
+                preserveAspectRatio="none"
+              >
+                <path 
+                  d="M 500 100 C 400 30, 300 170, 200 100 C 100 30, 0 170, -50 100" 
+                  fill="none" 
+                  stroke="url(#bgWaveTeal)" 
+                  strokeWidth="2" 
+                  className="bg-flow-wave bg-flow-wave-1"
+                />
+                <path 
+                  d="M 500 120 C 380 160, 280 40, 180 120 C 80 200, 0 40, -50 120" 
+                  fill="none" 
+                  stroke="url(#bgWaveLavender)" 
+                  strokeWidth="1.5" 
+                  className="bg-flow-wave bg-flow-wave-2"
+                />
+                <path 
+                  d="M 500 80 C 420 20, 320 180, 220 80 C 120 -20, 0 180, -50 80" 
+                  fill="none" 
+                  stroke="url(#bgWaveBeige)" 
+                  strokeWidth="1" 
+                  className="bg-flow-wave bg-flow-wave-3"
+                />
+                <defs>
+                  <linearGradient id="bgWaveTeal" x1="100%" y1="0%" x2="0%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(20, 184, 166, 0.5)" />
+                    <stop offset="60%" stopColor="rgba(20, 184, 166, 0.2)" />
+                    <stop offset="100%" stopColor="rgba(20, 184, 166, 0)" />
+                  </linearGradient>
+                  <linearGradient id="bgWaveLavender" x1="100%" y1="0%" x2="0%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(167, 139, 250, 0.4)" />
+                    <stop offset="60%" stopColor="rgba(167, 139, 250, 0.15)" />
+                    <stop offset="100%" stopColor="rgba(167, 139, 250, 0)" />
+                  </linearGradient>
+                  <linearGradient id="bgWaveBeige" x1="100%" y1="0%" x2="0%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(245, 245, 220, 0.3)" />
+                    <stop offset="60%" stopColor="rgba(245, 245, 220, 0.1)" />
+                    <stop offset="100%" stopColor="rgba(245, 245, 220, 0)" />
+                  </linearGradient>
+                </defs>
+              </svg>
 
-              <div style={{ maxWidth: '640px', position: 'relative', zIndex: 10 }}>
-                <span className="badge badge-teal" style={{ marginBottom: '12px' }}>
-                  Daily Focus
-                </span>
-                <h2 style={{
-                  fontSize: '2.2rem',
-                  fontFamily: 'var(--font-headings)',
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  marginBottom: '10px',
-                  lineHeight: '1.2'
-                }}>
-                  Welcome back
-                </h2>
-                <p style={{
-                  fontSize: '1.1rem',
-                  color: 'var(--text-secondary)',
-                  marginBottom: '10px',
-                  fontWeight: 400
-                }}>
-                  “Create balance through small daily practices. Track patterns, not perfection.”
-                </p>
-                <p style={{
-                  fontSize: '0.9rem',
-                  color: 'var(--text-muted)',
-                  marginBottom: '20px'
-                }}>
-                  Your body and mind deserve a gentle reset.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button onClick={() => handleOpenEntryModal()} className="btn btn-primary">
-                    <Plus size={16} />
-                    <span>Log Practice</span>
-                  </button>
-                  <button onClick={() => setCurrentTab('breathing')} className="btn btn-secondary">
-                    <span>Start Breathing</span>
-                  </button>
+              <div className="today-hero-content-wrapper">
+                {/* Left content column */}
+                <div style={{ maxWidth: '560px', width: '100%', position: 'relative', zIndex: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
+                    <span className="badge badge-teal" style={{ alignSelf: 'flex-start' }}>
+                      Daily Focus
+                    </span>
+                    <h2 style={{
+                      fontSize: '2.2rem',
+                      fontFamily: 'var(--font-headings)',
+                      fontWeight: 700,
+                      color: '#ffffff',
+                      lineHeight: '1.2',
+                      margin: 0
+                    }}>
+                      Welcome back
+                    </h2>
+                    {/* Thin elegant gradient divider line centered under the title */}
+                    <div style={{ 
+                      position: 'relative', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      width: '190px', 
+                      height: '9px', 
+                      marginTop: '4px'
+                    }}>
+                      {/* Gradient Line */}
+                      <div style={{ 
+                        width: '80px', 
+                        height: '1px', 
+                        background: 'linear-gradient(to right, transparent, rgba(20, 184, 166, 0.4), rgba(139, 92, 246, 0.4), transparent)' 
+                      }} />
+                      {/* Glowing Center Dot */}
+                      <div style={{ 
+                        position: 'absolute', 
+                        width: '4px', 
+                        height: '4px', 
+                        borderRadius: '50%', 
+                        backgroundColor: '#fff', 
+                        boxShadow: '0 0 6px rgba(20, 184, 166, 0.8), 0 0 2px rgba(139, 92, 246, 0.6)' 
+                      }} />
+                    </div>
+                  </div>
+                  <p style={{
+                    fontSize: '1.1rem',
+                    color: 'var(--text-secondary)',
+                    marginBottom: '12px',
+                    fontWeight: 400,
+                    lineHeight: '1.55',
+                    maxWidth: '540px'
+                  }}>
+                    “Create balance through small daily practices. Track patterns, not perfection.”
+                  </p>
+                  <p style={{
+                    fontSize: '0.9rem',
+                    color: 'var(--text-muted)',
+                    marginBottom: '20px',
+                    lineHeight: '1.4'
+                  }}>
+                    Your body and mind deserve a gentle reset.
+                  </p>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <button onClick={() => handleOpenEntryModal()} className="btn btn-primary">
+                      <Plus size={16} />
+                      <span>Log Practice</span>
+                    </button>
+                    <button onClick={() => setCurrentTab('breathing')} className="btn btn-secondary">
+                      <span>Start Breathing</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right visual column */}
+                <div className="yoga-illustration">
+                  <div className="yoga-sun" style={{ background: 'radial-gradient(circle, rgba(20, 184, 166, 0.2) 0%, rgba(167, 139, 250, 0.08) 50%, transparent 75%)' }} />
+                  <div className="yoga-ring yoga-ring-1" />
+                  <div className="yoga-ring yoga-ring-2" />
+                  <img 
+                    src={circleLogo} 
+                    alt="BalanceFlow Brand Symbol" 
+                    style={{
+                      borderRadius: '50%',
+                      boxShadow: '0 0 35px rgba(20, 184, 166, 0.35), 0 0 70px rgba(167, 139, 250, 0.2)',
+                      border: '2px solid rgba(255, 255, 255, 0.12)',
+                      zIndex: 3,
+                      animation: 'floatLotus 5s ease-in-out infinite',
+                      position: 'absolute'
+                    }} 
+                    className="hero-logo-img"
+                  />
+                  {/* Soft water/light reflection effect under the logo */}
+                  <img 
+                    src={circleLogo} 
+                    alt="" 
+                    style={{
+                      borderRadius: '50%',
+                      transform: 'scaleY(-0.7) translateY(125px) scale(0.95)',
+                      opacity: 0.18,
+                      filter: 'blur(5px) contrast(0.8) brightness(1.2)',
+                      zIndex: 2,
+                      position: 'absolute',
+                      pointerEvents: 'none',
+                      maskImage: 'linear-gradient(to top, transparent 20%, rgba(0,0,0,0.8) 100%)',
+                      WebkitMaskImage: 'linear-gradient(to top, transparent 20%, rgba(0,0,0,0.8) 100%)',
+                      animation: 'floatLotus 5s ease-in-out infinite'
+                    }}
+                    className="hero-logo-img"
+                  />
+                  {/* Floating Particles */}
+                  <div className="glow-particle" style={{ bottom: '20%', left: '15%', '--particle-drift': '15px', animationDelay: '0s', width: '4px', height: '4px' } as React.CSSProperties} />
+                  <div className="glow-particle" style={{ bottom: '25%', left: '35%', '--particle-drift': '-10px', animationDelay: '1.5s', width: '5px', height: '5px' } as React.CSSProperties} />
+                  <div className="glow-particle" style={{ bottom: '30%', left: '55%', '--particle-drift': '20px', animationDelay: '3s', width: '3px', height: '3px' } as React.CSSProperties} />
+                  <div className="glow-particle" style={{ bottom: '22%', left: '75%', '--particle-drift': '-8px', animationDelay: '4.5s', width: '4px', height: '4px' } as React.CSSProperties} />
                 </div>
               </div>
             </div>
@@ -696,72 +818,54 @@ export default function App() {
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Gentle Reset</span>
                   </div>
 
-                  {/* Sunset & Breathing Wave Visual Graphic Box */}
+                  {/* Serene Yoga Illustration Header */}
                   <div style={{
-                    height: '110px',
+                    height: '135px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(167, 139, 250, 0.2) 100%)',
-                    marginBottom: '16px',
+                    backgroundImage: `linear-gradient(to bottom, rgba(6, 10, 18, 0.15) 0%, rgba(6, 10, 18, 0.75) 100%), url(${wellnessYogaFlow})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center 20%',
+                    marginBottom: '10px',
                     position: 'relative',
                     overflow: 'hidden',
-                    border: '1px solid rgba(255, 255, 255, 0.05)'
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    padding: '16px'
                   }}>
+                    <img 
+                      src={circleLogo} 
+                      alt="" 
+                      style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        width: '24px',
+                        height: '24px',
+                        opacity: 0.35,
+                        pointerEvents: 'none'
+                      }} 
+                    />
                     <div style={{
-                      position: 'absolute',
-                      bottom: '-25px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '100px',
-                      height: '100px',
-                      borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(251, 146, 60, 0.45) 0%, transparent 75%)',
-                      filter: 'blur(4px)'
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      bottom: '0',
-                      left: '-20px',
-                      right: '-20px',
-                      height: '30px',
-                      borderRadius: '50% 50% 0 0',
-                      backgroundColor: 'rgba(6, 10, 18, 0.65)',
-                      borderTop: '1px solid rgba(255, 255, 255, 0.08)'
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '120px',
-                      height: '120px',
-                      borderRadius: '50%',
-                      border: '1px dashed rgba(20, 184, 166, 0.15)'
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
                       color: '#ffffff',
                       fontFamily: 'var(--font-headings)',
-                      fontSize: '0.8rem',
+                      fontSize: '0.85rem',
                       fontWeight: 600,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      textShadow: '0 2px 4px rgba(0, 0, 0, 0.6)'
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)'
                     }}>
                       Mindful Breath & Flow
                     </div>
                   </div>
 
-                  <h3 style={{ fontSize: '1.4rem', color: '#fff', marginBottom: '8px' }}>
+                  <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '4px', fontFamily: 'var(--font-headings)' }}>
                     12 min Gentle Yoga Reset
                   </h3>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4', maxWidth: '92%' }}>
                     Based on your recent logs showing mild body tension, we recommend this gentle session. It focuses on releasing shoulder tightness and inviting a calm balance.
                   </p>
-                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Clock size={14} />
                       <span>12 Min</span>
@@ -799,11 +903,47 @@ export default function App() {
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Daily Check-In</span>
                   </div>
 
-                  {/* Pulsing Breathing Wave Illustration Box */}
-                  <div className="balance-wave-container">
-                    <div className="balance-wave-ring balance-wave-ring-1" />
-                    <div className="balance-wave-ring balance-wave-ring-2" />
-                    <div className="balance-wave-center" />
+                  {/* Glowing Fluid Balance Space Header */}
+                  <div style={{
+                    height: '130px',
+                    borderRadius: '12px',
+                    backgroundImage: `linear-gradient(to bottom, rgba(6, 10, 18, 0.1) 0%, rgba(6, 10, 18, 0.7) 100%), url(${balanceSpaceGlow})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    marginBottom: '16px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    padding: '16px'
+                  }}>
+                    <div className="balance-wave-ring balance-wave-ring-1" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', borderColor: 'rgba(167, 139, 250, 0.25)', pointerEvents: 'none' }} />
+                    <div className="balance-wave-ring balance-wave-ring-2" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', borderColor: 'rgba(20, 184, 166, 0.25)', pointerEvents: 'none' }} />
+                    <img 
+                      src={circleLogo} 
+                      alt="" 
+                      style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        width: '24px',
+                        height: '24px',
+                        opacity: 0.35,
+                        pointerEvents: 'none'
+                      }} 
+                    />
+                    <div style={{
+                      color: '#ffffff',
+                      fontFamily: 'var(--font-headings)',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)'
+                    }}>
+                      Pause & Reflect
+                    </div>
                   </div>
 
                   <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '8px', fontFamily: 'var(--font-headings)' }}>
@@ -980,14 +1120,15 @@ export default function App() {
                   width: '56px',
                   height: '56px',
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(167, 139, 250, 0.08)',
+                  backgroundColor: 'rgba(20, 184, 166, 0.08)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--color-lavender-light)',
-                  marginBottom: '8px'
+                  marginBottom: '8px',
+                  border: '1.5px solid rgba(20, 184, 166, 0.2)',
+                  boxShadow: '0 0 16px rgba(20, 184, 166, 0.15)'
                 }}>
-                  <Smile size={28} />
+                  <img src={circleLogo} alt="BalanceFlow" style={{ width: '30px', height: '30px' }} />
                 </div>
                 <h3 style={{ fontSize: '1.4rem', color: '#fff', fontFamily: 'var(--font-headings)' }}>
                   Your Wellness Journal is Empty
@@ -1122,8 +1263,9 @@ export default function App() {
             </div>
 
             {entries.length === 0 ? (
-              <div className="glass-panel" style={{ padding: '40px 24px', textAlign: 'center' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              <div className="glass-panel" style={{ padding: '40px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <img src={circleLogo} alt="" style={{ width: '28px', height: '28px', opacity: 0.5, marginBottom: '4px' }} />
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
                   No session logs found to compile your weekly overview.
                 </p>
                 <button onClick={() => handleOpenEntryModal()} className="btn btn-primary">

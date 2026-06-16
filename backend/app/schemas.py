@@ -31,3 +31,48 @@ class WellnessEntryResponse(WellnessEntryBase):
     model_config = {
         "from_attributes": True
     }
+
+class WeeklyMinutesByDay(BaseModel):
+    """Weekly practice minutes grouped by day."""
+    Mon: int = 0
+    Tue: int = 0
+    Wed: int = 0
+    Thu: int = 0
+    Fri: int = 0
+    Sat: int = 0
+    Sun: int = 0
+
+class SessionCountsByType(BaseModel):
+    """Session count grouped by practice type."""
+    Yoga: int = 0
+    Meditation: int = 0
+    Breathing: int = 0
+
+class DashboardStatsResponse(BaseModel):
+    """Schema representing dashboard stats summary."""
+    total_minutes: int
+    total_sessions: int
+    consistency_streak: int
+    yoga_impact_score: int
+    average_stress_before: float
+    average_stress_after: float
+    average_stress_reduction_percent: float
+    average_energy_before: float
+    average_energy_after: float
+    average_energy_change: float
+    average_sleep_quality: float
+    weekly_minutes_by_day: WeeklyMinutesByDay
+    session_counts_by_type: SessionCountsByType
+
+class WeeklyReportResponse(BaseModel):
+    """Schema representing weekly summary report and wellness goals."""
+    total_practice_minutes: int
+    total_sessions: int
+    yoga_sessions: int
+    meditation_sessions: int
+    breathing_sessions: int
+    average_stress_reduction_percent: float
+    best_practice_type: str
+    average_sleep_quality: float
+    average_energy_change: float
+    gentle_next_week_goal: str

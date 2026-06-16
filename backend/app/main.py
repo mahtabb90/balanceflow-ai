@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app import models  # Import models to ensure they are registered with SQLAlchemy Base metadata
+from app.routers import entries
 
 # Create database tables if they do not exist
 Base.metadata.create_all(bind=engine)
@@ -13,6 +14,9 @@ app = FastAPI(
     description="Backend API for the BalanceFlow Mindful Wellness Companion app",
     version="1.0.0",
 )
+
+# Register routers
+app.include_router(entries.router, prefix="/api/entries", tags=["Entries"])
 
 # Enable CORS so frontend (React/Vite) can communicate with the backend
 app.add_middleware(

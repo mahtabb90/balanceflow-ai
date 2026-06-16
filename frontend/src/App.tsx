@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { StatCard } from './components/StatCard';
 import { PracticeCard } from './components/PracticeCard';
@@ -13,6 +13,7 @@ import { BreathingCircle } from './components/BreathingCircle';
 import { EntryModal } from './components/EntryModal';
 import { PracticeDetailModal } from './components/PracticeDetailModal';
 import type { WellnessEntry } from './types/wellness';
+import { getEntries, createEntry, deleteAllEntries, formatEntryDate } from './services/apiService';
 import { 
   BarChart, 
   Bar, 
@@ -181,6 +182,22 @@ export default function App() {
   
   // Entries Database State
   const [entries, setEntries] = useState<WellnessEntry[]>(INITIAL_ENTRIES);
+  const [isBackendOffline, setIsBackendOffline] = useState<boolean>(false);
+
+  // Load entries on mount
+  useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        const data = await getEntries();
+        setEntries(data);
+        setIsBackendOffline(false);
+      } catch (error) {
+        console.error("Failed to fetch entries from backend, falling back to local demo data:", error);
+        setIsBackendOffline(true);
+      }
+    };
+    fetchEntries();
+  }, []);
 
   // Quick reflection text box input
   const [newReflectionText, setNewReflectionText] = useState<string>('');
@@ -235,20 +252,29 @@ export default function App() {
   };
 
   // Save wellness entry log
-  const handleSaveEntry = (newLog: Omit<WellnessEntry, 'id' | 'date' | 'day'>) => {
-    const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const now = new Date();
-    
-    const entry: WellnessEntry = {
-      ...newLog,
-      id: 'e_' + Math.random().toString(36).substr(2, 9),
-      date: now.toISOString().split('T')[0],
-      day: daysShort[now.getDay()],
-    };
-
-    setEntries(prev => [...prev, entry]);
+  const handleSaveEntry = async (newLog: Omit<WellnessEntry, 'id' | 'date' | 'day'>) => {
     setIsModalOpen(false);
-    triggerToast("Session logged. Your dashboard has been updated.");
+    try {
+      const savedEntry = await createEntry(newLog);
+      setEntries(prev => [...prev, savedEntry]);
+      setIsBackendOffline(false);
+      triggerToast("Session logged. Your dashboard has been updated.");
+    } catch (error) {
+      console.error("Failed to save entry to backend, falling back to local storage:", error);
+      setIsBackendOffline(true);
+      
+      // Fallback behavior
+      const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const now = new Date();
+      const fallbackEntry: WellnessEntry = {
+        ...newLog,
+        id: 'e_' + Math.random().toString(36).substr(2, 9),
+        date: now.toISOString().split('T')[0],
+        day: daysShort[now.getDay()],
+      };
+      setEntries(prev => [...prev, fallbackEntry]);
+      triggerToast("Backend connection unavailable. Session saved locally.");
+    }
     
     // Automatically direct to Dashboard to see updates
     setCurrentTab('dashboard');
@@ -272,16 +298,10 @@ export default function App() {
   };
 
   // Submit quick reflection from Today page text area
-  const handleSaveReflection = (e: React.FormEvent) => {
+  const handleSaveReflection = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newReflectionText.trim()) {
-      // Append a quick meditation/pause log to store reflection in database
-      const now = new Date();
-      const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const entry: WellnessEntry = {
-        id: 'e_' + Math.random().toString(36).substr(2, 9),
-        date: now.toISOString().split('T')[0],
-        day: daysShort[now.getDay()],
+      const logData: Omit<WellnessEntry, 'id' | 'date' | 'day'> = {
         type: 'Meditation',
         title: 'Mindful Reflection',
         duration: 5,
@@ -295,23 +315,73 @@ export default function App() {
         sleepQuality: 7,
         reflection: newReflectionText.trim()
       };
-      
-      setEntries(prev => [...prev, entry]);
+
       setNewReflectionText('');
-      triggerToast("Reflection logged. Entry added to your history.");
+
+      try {
+        const savedEntry = await createEntry(logData);
+        setEntries(prev => [...prev, savedEntry]);
+        setIsBackendOffline(false);
+        triggerToast("Reflection logged. Entry added to your history.");
+      } catch (error) {
+        console.error("Failed to save reflection to backend, falling back to local storage:", error);
+        setIsBackendOffline(true);
+        
+        // Fallback behavior
+        const now = new Date();
+        const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const fallbackEntry: WellnessEntry = {
+          ...logData,
+          id: 'e_' + Math.random().toString(36).substr(2, 9),
+          date: now.toISOString().split('T')[0],
+          day: daysShort[now.getDay()],
+        };
+        setEntries(prev => [...prev, fallbackEntry]);
+        triggerToast("Backend connection unavailable. Reflection saved locally.");
+      }
     }
   };
 
   // Clear database logs (to test empty states)
-  const handleClearLogs = () => {
-    setEntries([]);
-    triggerToast("All history cleared. Viewing empty states.");
+  const handleClearLogs = async () => {
+    try {
+      await deleteAllEntries();
+      setEntries([]);
+      setIsBackendOffline(false);
+      triggerToast("All history cleared. Viewing empty states.");
+    } catch (error) {
+      console.error("Failed to clear entries on backend:", error);
+      setIsBackendOffline(true);
+      
+      // Fallback
+      setEntries([]);
+      triggerToast("Backend connection unavailable. Cleared local view.");
+    }
   };
 
   // Reset to seed demo database
-  const handleLoadDemoData = () => {
-    setEntries(INITIAL_ENTRIES);
-    triggerToast("Demo data reloaded successfully.");
+  const handleLoadDemoData = async () => {
+    try {
+      try {
+        await deleteAllEntries();
+      } catch {
+        // Ignore pre-clear error
+      }
+      
+      const seededEntries: WellnessEntry[] = [];
+      for (const initial of INITIAL_ENTRIES) {
+        const saved = await createEntry(initial);
+        seededEntries.push(saved);
+      }
+      setEntries(seededEntries);
+      setIsBackendOffline(false);
+      triggerToast("Demo data reloaded on backend successfully.");
+    } catch (error) {
+      console.error("Failed to load demo data on backend, falling back to local memory:", error);
+      setIsBackendOffline(true);
+      setEntries(INITIAL_ENTRIES);
+      triggerToast("Backend connection unavailable. Demo data reloaded locally.");
+    }
   };
 
   // List of practices for Practice Library
@@ -482,7 +552,7 @@ export default function App() {
   // Extract reflections
   const reflections = entries
     .filter(e => e.reflection && e.reflection.trim() !== '')
-    .map(e => e.reflection);
+    .map(e => ({ text: e.reflection, createdAt: e.created_at, date: e.date }));
 
   const aiInsights = getAIInsights(entries);
 
@@ -490,6 +560,34 @@ export default function App() {
     <Layout currentTab={currentTab} setCurrentTab={setCurrentTab}>
       <div className="page-container">
         
+        {/* Offline Banner */}
+        {isBackendOffline && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '12px',
+            padding: '12px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            color: '#fca5a5',
+            fontSize: '0.9rem',
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.05)',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#ef4444',
+              boxShadow: '0 0 8px #ef4444'
+            }} />
+            <span>Backend connection unavailable. Using local demo data.</span>
+          </div>
+        )}
+
         {/* Success Toast */}
         {showToast && (
           <div style={{
@@ -938,9 +1036,16 @@ export default function App() {
                       padding: '10px 12px', 
                       borderRadius: '8px', 
                       backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                      borderLeft: '2px solid var(--color-lavender-light)'
+                      borderLeft: '2px solid var(--color-lavender-light)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '12px'
                     }}>
-                      "{ref}"
+                      <span style={{ fontStyle: 'italic' }}>"{ref.text}"</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                        {formatEntryDate(ref.createdAt, ref.date)}
+                      </span>
                     </div>
                   ))
                 ) : (

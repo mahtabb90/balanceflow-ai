@@ -1,5 +1,6 @@
 """Database models module."""
 
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.sql import func
 from app.database import Base
@@ -25,4 +26,4 @@ class WellnessEntry(Base):
     stress_after = Column(Integer, nullable=False)
     sleep_quality = Column(Integer, nullable=False)  # Scale (e.g., 1-10)
     reflection = Column(Text, nullable=True)         # Optional personal reflection text
-    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)

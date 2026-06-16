@@ -14,4 +14,22 @@ export interface WellnessEntry {
   stressAfter: number;  // 1-10
   sleepQuality: number; // 1-10
   reflection: string;
+  created_at?: string;
+}
+
+export interface BackendWellnessEntry {
+  id: number;
+  practice_type: string;
+  practice_title: string;
+  duration_minutes: number;
+  intensity: string;
+  mood_before: string;
+  mood_after: string;
+  energy_before: number;
+  energy_after: number;
+  stress_before: number;
+  stress_after: number;
+  sleep_quality: number;
+  reflection?: string;
+  created_at: string;
 }

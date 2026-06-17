@@ -33,3 +33,15 @@ export interface BackendWellnessEntry {
   reflection?: string;
   created_at: string;
 }
+
+export interface AIInsightsResponse {
+  source: 'gemini' | 'fallback' | string;
+  pattern_summary: string;
+  gentle_recommendation: string;
+  stress_trend_insight: string;
+  sleep_energy_connection: string;
+  reflection_summary: string;
+  next_week_focus: string;
+  disclaimer: string;
+}
+

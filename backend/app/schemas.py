@@ -76,3 +76,15 @@ class WeeklyReportResponse(BaseModel):
     average_sleep_quality: float
     average_energy_change: float
     gentle_next_week_goal: str
+
+class AIInsightsResponse(BaseModel):
+    """Schema representing AI Insights generated or fallback."""
+    source: str
+    pattern_summary: str
+    gentle_recommendation: str
+    stress_trend_insight: str
+    sleep_energy_connection: str
+    reflection_summary: str
+    next_week_focus: str
+    disclaimer: str
+

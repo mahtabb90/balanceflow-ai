@@ -5,7 +5,7 @@ import { PracticeCard } from './components/PracticeCard';
 import circleLogo from './assets/balanceflow-circle-logo.png';
 import wellnessYogaFlow from './assets/wellness_yoga_flow.png';
 import balanceSpaceGlow from './assets/balance_space_glow.png';
-import type { Practice } from './components/PracticeCard';
+import type { Practice } from './types/practice';
 import { ChartCard } from './components/ChartCard';
 import { InsightCard } from './components/InsightCard';
 import { getAIInsights, getWellnessMetrics } from './services/aiInsightService';
@@ -412,7 +412,6 @@ export default function App() {
     }
   };
 
-  // List of practices for Practice Library
   const practices: Practice[] = [
     {
       id: 'p1',
@@ -423,7 +422,45 @@ export default function App() {
       goal: 'Gentle morning energy and posture balance',
       description: 'A slow-paced sequence targeting shoulder release and soft lunges to awaken the muscles and warm up the body with kind, mindful movements.',
       gradientClass: 'grad-yoga-1',
-      benefits: ['Encourages gentle body movement', 'May support calm focus', 'Soothes morning shoulder stiffness']
+      benefits: ['Encourages gentle body movement', 'May support calm focus', 'Soothes morning shoulder stiffness'],
+      imageUrl: '/practice-images/morning-yoga-flow.webp',
+      sequence: [
+        {
+          pose_name: 'Seated Breath',
+          duration_minutes: 2,
+          instruction: 'Sit comfortably, close your eyes, and focus on deep breathing. Let your shoulders soften.',
+          breath_cue: 'Inhale slow, exhale long',
+          intention: 'Grounding your attention'
+        },
+        {
+          pose_name: 'Cat-Cow Flow',
+          duration_minutes: 3,
+          instruction: 'Move to hands and knees. Alternate between arching your back up and letting your belly sink down.',
+          breath_cue: 'Inhale arching, exhale rounding',
+          intention: 'Warming the spine and shoulders'
+        },
+        {
+          pose_name: 'Low Lunge',
+          duration_minutes: 4,
+          instruction: 'Step one foot forward, sink your hips gently, and lift your chest. Switch sides halfway.',
+          breath_cue: 'Breathe steadily to support hip opening',
+          intention: 'Stretching hip flexors gently'
+        },
+        {
+          pose_name: 'Forward Fold',
+          duration_minutes: 3,
+          instruction: 'Stand up and fold forward from your waist. Let your neck hang loose and shake your head softly.',
+          breath_cue: 'Exhale folding deeper, relaxing the neck',
+          intention: 'Releasing lower back tension'
+        },
+        {
+          pose_name: 'Standing Balance',
+          duration_minutes: 3,
+          instruction: 'Shift weight to one foot and focus on a single point in front of you. Change sides midway.',
+          breath_cue: 'Clear, quiet breathing supports stability',
+          intention: 'Centering focus and physical balance'
+        }
+      ]
     },
     {
       id: 'p2',
@@ -434,7 +471,45 @@ export default function App() {
       goal: 'Release physical tightness in hips and low back',
       description: 'Focuses on deep hip openers and extended forward folds. Designed to release body tension, clear physical tightness, and invite a deep sense of calm.',
       gradientClass: 'grad-yoga-2',
-      benefits: ['Helps you slow down and breathe', 'Soothes muscle tightness in back', 'Invites a deep sense of calm balance']
+      benefits: ['Helps you slow down and breathe', 'Soothes muscle tightness in back', 'Invites a deep sense of calm balance'],
+      imageUrl: '/practice-images/stress-relief-yoga.webp',
+      sequence: [
+        {
+          pose_name: "Child’s Pose",
+          duration_minutes: 3,
+          instruction: 'Sit back on your heels, extend your arms forward, and rest your forehead on the floor.',
+          breath_cue: 'Deep belly breathing',
+          intention: 'Calm reflection and quiet presence'
+        },
+        {
+          pose_name: 'Seated Side Stretch',
+          duration_minutes: 3,
+          instruction: 'Sit cross-legged, reach one arm overhead, and stretch your side body gently. Repeat on other side.',
+          breath_cue: 'Breathe slowly into your side ribs',
+          intention: 'Releasing tightness in side body'
+        },
+        {
+          pose_name: 'Figure Four Stretch',
+          duration_minutes: 5,
+          instruction: 'Lie on your back, cross one ankle over the opposite knee, and draw your thighs closer. Switch sides midway.',
+          breath_cue: 'Soft, long exhalations on hip release',
+          intention: 'Releasing lower back and hip tension'
+        },
+        {
+          pose_name: 'Forward Fold',
+          duration_minutes: 4,
+          instruction: 'Sit with legs extended straight in front of you, and reach forward from your hips.',
+          breath_cue: 'Quiet, steady breathing through nose',
+          intention: 'Stretching hamstrings and lower back'
+        },
+        {
+          pose_name: 'Supported Rest',
+          duration_minutes: 5,
+          instruction: 'Lie flat on your back with arms relaxed at your sides and eyes closed.',
+          breath_cue: 'Let your natural, quiet breath return',
+          intention: 'Physical integration and deep ease'
+        }
+      ]
     },
     {
       id: 'p3',
@@ -445,7 +520,45 @@ export default function App() {
       goal: 'Relax muscles and prepare for sound sleep',
       description: 'Gentle seated stretching, shoulder openers, and child’s pose to help you quiet your thoughts, release postural fatigue, and prepare for a restful sleep.',
       gradientClass: 'grad-yoga-3',
-      benefits: ['Quietens postural fatigue', 'Prepares physical body for deep rest', 'Eases transition to sleep']
+      benefits: ['Quietens postural fatigue', 'Prepares physical body for deep rest', 'Eases transition to sleep'],
+      imageUrl: '/practice-images/evening-stretch.webp',
+      sequence: [
+        {
+          pose_name: 'Neck Rolls',
+          duration_minutes: 2,
+          instruction: 'Slowly roll your head in gentle circles to release tightness in neck muscles.',
+          breath_cue: 'Slow, easy breathing cycles',
+          intention: 'Releasing tension from sitting'
+        },
+        {
+          pose_name: 'Shoulder Opener',
+          duration_minutes: 2,
+          instruction: 'Clasp your hands behind your back and gently pull down, lifting your chest slightly.',
+          breath_cue: 'Inhale lifting, exhale releasing shoulders',
+          intention: 'Opening front chest and shoulders'
+        },
+        {
+          pose_name: 'Seated Forward Fold',
+          duration_minutes: 2,
+          instruction: 'Sit cross-legged, crawl your fingers forward, and rest your head down.',
+          breath_cue: 'Release tension on exhalations',
+          intention: 'Spinal elongation and calming the mind'
+        },
+        {
+          pose_name: 'Supine Twist',
+          duration_minutes: 2,
+          instruction: 'Lie on your back, drop knees to one side, and stretch arms wide. Switch sides midway.',
+          breath_cue: 'Natural, gentle recovery rhythm',
+          intention: 'Relaxing back muscles'
+        },
+        {
+          pose_name: 'Legs Rest Position',
+          duration_minutes: 2,
+          instruction: 'Place your legs resting flat or bent on your mat, keeping body completely still.',
+          breath_cue: 'Quiet resting breath',
+          intention: 'Calming your nervous system'
+        }
+      ]
     },
     {
       id: 'p4',
@@ -456,7 +569,45 @@ export default function App() {
       goal: 'Quiet the mind and transition to peaceful rest',
       description: 'A soft body-scan meditation focusing on slow breath awareness to release day-to-day mind chatter, settle physical tension, and ease into deep rest.',
       gradientClass: 'grad-yoga-4',
-      benefits: ['Eases active daily mind chatter', 'Encourages peaceful self-reflection', 'Releases muscle tension safely']
+      benefits: ['Eases active daily mind chatter', 'Encourages peaceful self-reflection', 'Releases muscle tension safely'],
+      imageUrl: '/practice-images/sleep-meditation.webp',
+      sequence: [
+        {
+          pose_name: 'Settle In',
+          duration_minutes: 2,
+          instruction: 'Lie down comfortably in bed, adjust your pillows, and close your eyes.',
+          breath_cue: 'Slow, soothing breaths through nose',
+          intention: 'Unwinding mental activity'
+        },
+        {
+          pose_name: 'Body Scan',
+          duration_minutes: 5,
+          instruction: 'Mentally shift your attention from toes to head, noting and releasing physical tightness.',
+          breath_cue: 'Breathe comfort into each area you scan',
+          intention: 'Physical relaxation and release'
+        },
+        {
+          pose_name: 'Slow Breath',
+          duration_minutes: 4,
+          instruction: 'Extend your exhalations gently to signal your body it is time to rest.',
+          breath_cue: 'Prolonged quiet exhalations',
+          intention: 'Slowing heart rate and relaxing mind'
+        },
+        {
+          pose_name: 'Release the Day',
+          duration_minutes: 3,
+          instruction: 'Let go of thoughts or worries about today. Allow them to drift away with each exhale.',
+          breath_cue: 'Soft, natural exhalations',
+          intention: 'Mental release and quietening thoughts'
+        },
+        {
+          pose_name: 'Quiet Rest',
+          duration_minutes: 1,
+          instruction: 'Rest in quiet stillness, transitioning naturally toward sleep.',
+          breath_cue: 'Let breath breathe itself',
+          intention: 'Transitioning to peaceful sleep'
+        }
+      ]
     },
     {
       id: 'p5',
@@ -467,7 +618,45 @@ export default function App() {
       goal: 'Find instant center and mental clarity',
       description: 'A simple, rhythmic equal breathing exercise to clear your mind, renew focus, and establish an instant sense of calm balance during busy hours.',
       gradientClass: 'grad-yoga-5',
-      benefits: ['Provides an instant mental pause', 'Encourages calm centered focus', 'Helps balance recovery rhythms']
+      benefits: ['Provides an instant mental pause', 'Encourages calm centered focus', 'Helps balance recovery rhythms'],
+      imageUrl: '/practice-images/breathing-reset.webp',
+      sequence: [
+        {
+          pose_name: 'Arrive',
+          duration_minutes: 1,
+          instruction: 'Sit upright, let your hands rest on your knees, and quiet your attention.',
+          breath_cue: 'Soft arrival breaths',
+          intention: 'Centering focus and quiet presence'
+        },
+        {
+          pose_name: 'Inhale Slowly',
+          duration_minutes: 1,
+          instruction: 'Breathe in through your nose, letting your abdomen rise gently (4 seconds).',
+          breath_cue: 'Smooth equal inhalation',
+          intention: 'Oxygenating the body'
+        },
+        {
+          pose_name: 'Exhale Longer',
+          duration_minutes: 1,
+          instruction: 'Exhale slowly through your mouth, relaxing your shoulders and jaw (4 seconds).',
+          breath_cue: 'Easy equal exhalation',
+          intention: 'Releasing mental pressure'
+        },
+        {
+          pose_name: 'Repeat Rhythm',
+          duration_minutes: 1,
+          instruction: 'Maintain this steady, comforting breathing pattern.',
+          breath_cue: 'Comfortable pacing cycles',
+          intention: 'Balancing recovery rhythms'
+        },
+        {
+          pose_name: 'Notice Calm',
+          duration_minutes: 1,
+          instruction: 'Let breath return to its normal rhythm. Feel the steady centering effect.',
+          breath_cue: 'Natural quiet breathing',
+          intention: 'Present moment awareness'
+        }
+      ]
     },
     {
       id: 'p6',
@@ -478,9 +667,48 @@ export default function App() {
       goal: 'Ease muscle tightness from sitting at desk',
       description: 'Gentle stretches targeting neck muscles and shoulder rotations. The perfect quick desk reset to soothe posture fatigue and physical tension.',
       gradientClass: 'grad-yoga-6',
-      benefits: ['Eases upper body posture fatigue', 'Helps release tension from sitting', 'Supports desk recovery rhythm']
+      benefits: ['Eases upper body posture fatigue', 'Helps release tension from sitting', 'Supports desk recovery rhythm'],
+      imageUrl: '/practice-images/neck-shoulder-release.webp',
+      sequence: [
+        {
+          pose_name: 'Neck Tilt',
+          duration_minutes: 2,
+          instruction: 'Tilt your head to one side, bringing ear toward shoulder. Hold and repeat on other side.',
+          breath_cue: 'Breathe softly into the side of the neck',
+          intention: 'Easing neck tightness'
+        },
+        {
+          pose_name: 'Shoulder Rolls',
+          duration_minutes: 2,
+          instruction: 'Roll your shoulders in slow, gentle backward and forward circles.',
+          breath_cue: 'Inhale lifting, exhale rolling back',
+          intention: 'Releasing upper back and collarbone stiffness'
+        },
+        {
+          pose_name: 'Chest Opener',
+          duration_minutes: 3,
+          instruction: 'Interlace your fingers behind your head and open your elbows wide, looking up gently.',
+          breath_cue: 'Expand chest fully on inhalation',
+          intention: 'Posture alignment and chest stretch'
+        },
+        {
+          pose_name: 'Upper Back Stretch',
+          duration_minutes: 3,
+          instruction: 'Reach your arms forward, interlace your fingers, and round your upper back gently.',
+          breath_cue: 'Breathe into space between shoulder blades',
+          intention: 'Stretching upper back muscles'
+        },
+        {
+          pose_name: 'Seated Rest',
+          duration_minutes: 2,
+          instruction: 'Let your arms drop, rest quietly, and notice physical release in upper body.',
+          breath_cue: 'Natural resting breath',
+          intention: 'Integrating practice benefits'
+        }
+      ]
     }
   ];
+
 
   // Dynamic calculations from database
   const {
@@ -930,7 +1158,45 @@ export default function App() {
                     goal: 'Release shoulder tightness and invite calm balance',
                     description: 'A soothing sequence focused on neck rolls, chest openers, and gentle shoulder stretches. Designed to ease desktop fatigue and quiet active tension.',
                     gradientClass: 'grad-yoga-1',
-                    benefits: ['Soothes desk posture fatigue', 'Encourages gentle movement', 'May support calm focus']
+                    benefits: ['Soothes desk posture fatigue', 'Encourages gentle movement', 'May support calm focus'],
+                    imageUrl: '/practice-images/neck-shoulder-release.webp',
+                    sequence: [
+                      {
+                        pose_name: 'Neck Tilt',
+                        duration_minutes: 2,
+                        instruction: 'Tilt your head to one side, bringing ear toward shoulder. Hold and repeat on other side.',
+                        breath_cue: 'Breathe softly into the side of the neck',
+                        intention: 'Easing neck tightness'
+                      },
+                      {
+                        pose_name: 'Shoulder Rolls',
+                        duration_minutes: 2,
+                        instruction: 'Roll your shoulders in slow, gentle backward and forward circles.',
+                        breath_cue: 'Inhale lifting, exhale rolling back',
+                        intention: 'Releasing upper back and collarbone stiffness'
+                      },
+                      {
+                        pose_name: 'Chest Opener',
+                        duration_minutes: 3,
+                        instruction: 'Interlace your fingers behind your head and open your elbows wide, looking up gently.',
+                        breath_cue: 'Expand chest fully on inhalation',
+                        intention: 'Posture alignment and chest stretch'
+                      },
+                      {
+                        pose_name: 'Upper Back Stretch',
+                        duration_minutes: 3,
+                        instruction: 'Reach your arms forward, interlace your fingers, and round your upper back gently.',
+                        breath_cue: 'Breathe into space between shoulder blades',
+                        intention: 'Stretching upper back muscles'
+                      },
+                      {
+                        pose_name: 'Seated Rest',
+                        duration_minutes: 2,
+                        instruction: 'Let your arms drop, rest quietly, and notice physical release in upper body.',
+                        breath_cue: 'Natural resting breath',
+                        intention: 'Integrating practice benefits'
+                      }
+                    ]
                   })}
                   className="btn btn-primary" 
                   style={{ width: '100%', justifyContent: 'center' }}

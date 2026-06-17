@@ -1,16 +1,6 @@
+import React, { useState } from 'react';
 import { Play, Clock, Sparkles } from 'lucide-react';
-
-export interface Practice {
-  id: string;
-  title: string;
-  type: 'Yoga' | 'Meditation' | 'Breathing';
-  duration: number; // in minutes
-  level: 'Beginner' | 'Intermediate' | 'All Levels';
-  goal: string;
-  description: string;
-  gradientClass: string;
-  benefits?: string[];
-}
+import type { Practice } from '../types/practice';
 
 interface PracticeCardProps {
   practice: Practice;
@@ -18,6 +8,7 @@ interface PracticeCardProps {
 }
 
 export const PracticeCard: React.FC<PracticeCardProps> = ({ practice, onStart }) => {
+  const [imgFailed, setImgFailed] = useState(false);
   const getBadgeColorClass = (type: string) => {
     switch (type) {
       case 'Yoga':
@@ -68,6 +59,23 @@ export const PracticeCard: React.FC<PracticeCardProps> = ({ practice, onStart })
           background: 'linear-gradient(to bottom, transparent 40%, rgba(6, 10, 18, 0.8) 100%)',
           zIndex: 1
         }} />
+
+        {practice.imageUrl && !imgFailed && (
+          <img 
+            src={practice.imageUrl} 
+            onError={() => setImgFailed(true)} 
+            alt={practice.title}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: 0,
+              opacity: 0.5
+            }}
+          />
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
           <span className={`badge ${getBadgeColorClass(practice.type)}`}>

@@ -10,9 +10,12 @@ import {
   Heart,
   Volume2,
   VolumeX,
-  FastForward
+  FastForward,
+  Wind,
+  Sparkles
 } from 'lucide-react';
-import type { Practice } from './PracticeCard';
+import type { Practice, PracticeStep } from '../types/practice';
+
 
 interface PracticeDetailModalProps {
   isOpen: boolean;
@@ -24,29 +27,7 @@ interface PracticeDetailModalProps {
 type ViewMode = 'detail' | 'active' | 'complete';
 type BreathPhase = 'Inhale' | 'Hold' | 'Exhale' | 'Rest';
 
-const STEPS_BY_TYPE: Record<'Yoga' | 'Meditation' | 'Breathing', { name: string; instruction: string }[]> = {
-  Yoga: [
-    { name: 'Prepare your space', instruction: 'Find a quiet, clear area to move. Stand or sit comfortably.' },
-    { name: 'Move gently', instruction: 'Start slowly warming up your body. Flow through gentle neck circles and shoulder rolls.' },
-    { name: 'Breathe with awareness', instruction: 'Coordinate your movements with steady breathing. Inhale as you lift, exhale as you fold.' },
-    { name: 'Slow down', instruction: 'Gently lower your body. Allow your muscles to relax and let your breath settle into a natural pace.' },
-    { name: 'Reflect', instruction: 'Come to a still position. Rest silently and notice the physical release and stability.' }
-  ],
-  Meditation: [
-    { name: 'Sit comfortably', instruction: 'Find an easy seated posture. Keep your spine tall yet relaxed.' },
-    { name: 'Notice your breath', instruction: 'Shift your focus to the inflow and outflow of your breath. Feel the natural rise and fall of your chest.' },
-    { name: 'Relax your shoulders', instruction: 'Let go of any physical tightness in your upper body. Soften your jaw.' },
-    { name: 'Return gently', instruction: 'If your mind wanders, gently guide your focus back to the sensation of breathing.' },
-    { name: 'Reflect', instruction: 'Allow your awareness to expand. Take a quiet moment to observe your state of mind.' }
-  ],
-  Breathing: [
-    { name: 'Inhale slowly', instruction: 'Draw breath deep into your belly through your nose, letting your lungs expand gently (4 seconds).' },
-    { name: 'Hold softly', instruction: 'Pause at the top of your breath. Settle into the calm space of stillness (4 seconds).' },
-    { name: 'Exhale gently', instruction: 'Release the breath slowly through your mouth, letting go of tension (4 seconds).' },
-    { name: 'Repeat', instruction: 'Establish a steady, comforting rhythm. Flow smoothly from one breath cycle to the next.' },
-    { name: 'Notice calm', instruction: 'Let your breath return to its normal rhythm. Feel the steady centering effect.' }
-  ]
-};
+
 
 export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
   isOpen,
@@ -55,6 +36,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
   onCompleteAndLog,
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('detail');
+  const [imgFailed, setImgFailed] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(practice ? practice.duration * 60 : 0);
   const [totalElapsed, setTotalElapsed] = useState(0);
@@ -197,9 +179,39 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
     setViewMode('detail');
   };
 
-  const currentSteps = practice ? (STEPS_BY_TYPE[practice.type] || STEPS_BY_TYPE['Yoga']) : [];
-  const currentStepIdx = practice ? Math.min(4, Math.floor((totalElapsed / (practice.duration * 60)) * 5)) : 0;
-  const currentStep = currentSteps[currentStepIdx] || { name: '', instruction: '' };
+  const getActiveStepInfo = () => {
+    const defaultSteps: PracticeStep[] = [
+      { pose_name: 'Preparation', duration_minutes: 1, instruction: 'Settle in.', breath_cue: 'Natural breath', intention: 'Prepare' }
+    ];
+    const steps = practice?.sequence && practice.sequence.length > 0 ? practice.sequence : defaultSteps;
+    
+    let accumulatedSeconds = 0;
+    for (let i = 0; i < steps.length; i++) {
+      const stepDurationSecs = steps[i].duration_minutes * 60;
+      accumulatedSeconds += stepDurationSecs;
+      if (totalElapsed < accumulatedSeconds) {
+        const stepTimeLeft = accumulatedSeconds - totalElapsed;
+        return {
+          stepIndex: i,
+          step: steps[i],
+          stepTimeLeft,
+          stepDurationSecs
+        };
+      }
+    }
+    return {
+      stepIndex: steps.length - 1,
+      step: steps[steps.length - 1],
+      stepTimeLeft: 0,
+      stepDurationSecs: steps[steps.length - 1].duration_minutes * 60
+    };
+  };
+
+  const activeStepInfo = getActiveStepInfo();
+  const currentStepIdx = activeStepInfo.stepIndex;
+  const currentStep = activeStepInfo.step;
+  const currentSteps = practice?.sequence && practice.sequence.length > 0 ? practice.sequence : [];
+
 
   return (
     <div style={{
@@ -258,6 +270,23 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                 background: 'linear-gradient(to bottom, transparent 30%, #0c111e 100%)',
                 zIndex: 1
               }} />
+
+              {practice.imageUrl && !imgFailed && (
+                <img 
+                  src={practice.imageUrl} 
+                  onError={() => setImgFailed(true)} 
+                  alt={practice.title}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    zIndex: 0,
+                    opacity: 0.45
+                  }}
+                />
+              )}
 
               {/* Close Button */}
               <button 
@@ -353,87 +382,86 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                 </ul>
               </div>
 
-              {/* Session Preview */}
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '16px' }}>
-                <h4 style={{ 
-                  fontSize: '0.85rem', 
-                  fontWeight: 600, 
-                  color: 'var(--color-lavender-light)', 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.05em', 
-                  marginBottom: '12px' 
-                }}>
-                  Session Preview
-                </h4>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(20, 184, 166, 0.15)',
-                      border: '1px solid var(--color-teal)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.7rem',
-                      color: 'var(--color-teal-light)',
-                      fontWeight: 700,
-                      marginTop: '2px',
-                      flexShrink: 0
-                    }}>1</div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>Prepare</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Find a comfortable seated posture and quiet your thoughts (1-2 Min).</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(167, 139, 250, 0.15)',
-                      border: '1px solid var(--color-lavender)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.7rem',
-                      color: 'var(--color-lavender-light)',
-                      fontWeight: 700,
-                      marginTop: '2px',
-                      flexShrink: 0
-                    }}>2</div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>Move / Breathe</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Follow the visual guides and pacing rings to release body tension.</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(245, 245, 220, 0.15)',
-                      border: '1px solid var(--color-beige-dark)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.7rem',
-                      color: 'var(--color-beige-muted)',
-                      fontWeight: 700,
-                      marginTop: '2px',
-                      flexShrink: 0
-                    }}>3</div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>Reflect</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Observe wellness patterns and log your personal reflection notes.</span>
-                    </div>
+              {/* Session Sequence */}
+              {practice.sequence && practice.sequence.length > 0 && (
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '16px' }}>
+                  <h4 style={{ 
+                    fontSize: '0.85rem', 
+                    fontWeight: 600, 
+                    color: 'var(--color-lavender-light)', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.05em', 
+                    marginBottom: '14px' 
+                  }}>
+                    Session Sequence
+                  </h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {practice.sequence.map((step, idx) => (
+                      <div 
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px',
+                          padding: '14px',
+                          borderRadius: '12px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.01)',
+                          border: '1px solid rgba(255, 255, 255, 0.04)',
+                          boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.02)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{
+                              width: '22px',
+                              height: '22px',
+                              borderRadius: '50%',
+                              backgroundColor: practice.type === 'Yoga' ? 'rgba(20, 184, 166, 0.1)' : 'rgba(167, 139, 250, 0.1)',
+                              border: practice.type === 'Yoga' ? '1px solid rgba(20, 184, 166, 0.25)' : '1px solid rgba(167, 139, 250, 0.25)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.75rem',
+                              color: practice.type === 'Yoga' ? 'var(--color-teal-light)' : 'var(--color-lavender-light)',
+                              fontWeight: 700,
+                              flexShrink: 0
+                            }}>
+                              {idx + 1}
+                            </div>
+                            <span style={{ fontSize: '0.92rem', fontWeight: 600, color: '#fff' }}>
+                              {step.pose_name}
+                            </span>
+                          </div>
+                          
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                            {step.duration_minutes} min
+                          </span>
+                        </div>
+                        
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.45' }}>
+                          {step.instruction}
+                        </p>
+                        
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '6px', 
+                          fontSize: '0.78rem', 
+                          color: 'var(--color-teal-light)', 
+                          marginTop: '2px' 
+                        }}>
+                          <Wind size={12} style={{ color: 'var(--color-teal-light)', opacity: 0.8 }} />
+                          <span style={{ fontStyle: 'italic', opacity: 0.85 }}>
+                            <strong>Breath:</strong> {step.breath_cue}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
+
 
               {/* Buttons panel */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
@@ -492,9 +520,9 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
               </h3>
             </div>
 
-            {/* Progress Indicator (5 horizontal lines) */}
+            {/* Progress Indicator (dynamic lines) */}
             <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '360px', marginTop: '4px' }}>
-              {[0, 1, 2, 3, 4].map((idx) => {
+              {currentSteps.map((_, idx) => {
                 const isCompleted = idx < currentStepIdx;
                 const isActiveStep = idx === currentStepIdx;
                 return (
@@ -518,7 +546,7 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
             </div>
 
             {/* Current Step description */}
-            <div style={{ minHeight: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '6px', maxWidth: '400px' }}>
+            <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '6px', maxWidth: '400px' }}>
               <span style={{ 
                 fontSize: '0.82rem', 
                 fontWeight: 600, 
@@ -526,17 +554,47 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                 textTransform: 'uppercase', 
                 letterSpacing: '0.08em' 
               }}>
-                Step {currentStepIdx + 1} of 5: {currentStep.name}
+                Step {currentStepIdx + 1} of {currentSteps.length}: {currentStep.pose_name} ({currentStep.duration_minutes} min)
               </span>
+              
               <p style={{ 
                 fontSize: '0.92rem', 
                 color: 'var(--text-secondary)', 
                 lineHeight: '1.45',
-                margin: 0
+                margin: '0 0 4px 0'
               }}>
                 {currentStep.instruction}
               </p>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--color-teal-light)' }}>
+                  <Wind size={14} />
+                  <span><strong>Breath:</strong> {currentStep.breath_cue}</span>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--color-lavender-light)' }}>
+                  <Sparkles size={14} />
+                  <span><strong>Focus:</strong> {currentStep.intention}</span>
+                </div>
+              </div>
+
+              {currentStepIdx + 1 < currentSteps.length && (
+                <div style={{ 
+                  fontSize: '0.78rem', 
+                  color: 'var(--text-muted)', 
+                  marginTop: '10px',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.01)',
+                  border: '1px solid rgba(255, 255, 255, 0.03)',
+                  display: 'inline-block',
+                  alignSelf: 'center'
+                }}>
+                  <strong>Next Pose:</strong> {currentSteps[currentStepIdx + 1].pose_name} ({currentSteps[currentStepIdx + 1].duration_minutes} min)
+                </div>
+              )}
             </div>
+
 
             {/* Visual breathing guide aura / countdown */}
             <div style={{
@@ -747,10 +805,10 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
             </div>
 
             <h3 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#fff', fontFamily: 'var(--font-headings)', margin: 0 }}>
-              Great job — your session is complete.
+              Session Complete
             </h3>
             <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', maxWidth: '340px', lineHeight: '1.5', margin: 0 }}>
-              Take a moment to notice how you feel.
+              You completed a mindful practice. Take a moment to notice how you feel.
             </p>
 
             {/* Session Summary Card */}
@@ -774,10 +832,11 @@ export const PracticeDetailModal: React.FC<PracticeDetailModalProps> = ({
                 {practice.title}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                <span>Type: <strong>{practice.type}</strong></span>
                 <span>Duration: <strong>{practice.duration} min</strong></span>
+                <span>Steps Completed: <strong>{currentSteps.length} steps</strong></span>
               </div>
             </div>
+
 
             <button 
               onClick={() => onCompleteAndLog(practice)}

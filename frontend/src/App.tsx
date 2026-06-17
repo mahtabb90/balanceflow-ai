@@ -12,8 +12,8 @@ import { getAIInsights, getWellnessMetrics } from './services/aiInsightService';
 import { BreathingCircle } from './components/BreathingCircle';
 import { EntryModal } from './components/EntryModal';
 import { PracticeDetailModal } from './components/PracticeDetailModal';
-import type { WellnessEntry } from './types/wellness';
-import { getEntries, createEntry, deleteAllEntries, formatEntryDate } from './services/apiService';
+import type { WellnessEntry, AIInsightsResponse } from './types/wellness';
+import { getEntries, createEntry, deleteAllEntries, formatEntryDate, getAIInsights as getAIInsightsApi } from './services/apiService';
 import { 
   BarChart, 
   Bar, 
@@ -184,6 +184,12 @@ export default function App() {
   const [entries, setEntries] = useState<WellnessEntry[]>(INITIAL_ENTRIES);
   const [isBackendOffline, setIsBackendOffline] = useState<boolean>(false);
 
+  // AI Insights State
+  const [backendInsights, setBackendInsights] = useState<AIInsightsResponse | null>(null);
+  const [isLoadingInsights, setIsLoadingInsights] = useState<boolean>(false);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
+
+
   // Load entries on mount
   useEffect(() => {
     const fetchEntries = async () => {
@@ -198,6 +204,28 @@ export default function App() {
     };
     fetchEntries();
   }, []);
+
+  // Fetch backend AI insights when switching to the insights tab or when entry count changes
+  useEffect(() => {
+    const fetchBackendInsights = async () => {
+      setIsLoadingInsights(true);
+      setInsightsError(null);
+      try {
+        const data = await getAIInsightsApi();
+        setBackendInsights(data);
+      } catch (error) {
+        console.error("Failed to load backend insights:", error);
+        setInsightsError("AI insights are temporarily unavailable. Your local wellness patterns are still available.");
+      } finally {
+        setIsLoadingInsights(false);
+      }
+    };
+
+    if (currentTab === 'insights') {
+      fetchBackendInsights();
+    }
+  }, [currentTab, entries.length]);
+
 
   // Quick reflection text box input
   const [newReflectionText, setNewReflectionText] = useState<string>('');
@@ -1359,8 +1387,9 @@ export default function App() {
                     title="AI Weekly Summary" 
                     badge="AI Synthesis"
                     type="pattern"
-                    content={aiInsights.pattern.content}
+                    content={backendInsights?.pattern_summary || aiInsights.pattern.content}
                     reflectionPrompt="How do you feel on mornings when you make time for a short flow compared to mornings when you don't?"
+
                     onReflectClick={() => {
                       setCurrentTab('today');
                       setTimeout(() => {
@@ -1464,116 +1493,235 @@ export default function App() {
           <div>
             <div style={{ textAlign: 'left', marginBottom: '24px' }}>
               <span className="badge badge-lavender" style={{ marginBottom: '8px' }}>Mindful Wellness Companion</span>
+              {backendInsights && (
+                <span className={`badge ${backendInsights.source === 'gemini' ? 'badge-teal' : 'badge-lavender'}`} style={{ marginBottom: '8px', marginLeft: '8px' }}>
+                  {backendInsights.source === 'gemini' ? 'Gemini AI' : 'Rule-based fallback'}
+                </span>
+              )}
               <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '6px' }}>Your Wellness Insights</h2>
               <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
                 Review patterns, trends and reflections from your wellness practice.
               </p>
             </div>
 
-            {entries.length === 0 ? (
-              /* Beautiful Empty State */
+            {isLoadingInsights ? (
               <div className="glass-panel" style={{
                 padding: '60px 24px',
                 textAlign: 'center',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '20px',
-                border: '1px dashed rgba(255, 255, 255, 0.1)',
                 marginTop: '12px'
               }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(167, 139, 250, 0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '8px',
-                  border: '1.5px solid rgba(167, 139, 250, 0.2)',
-                  boxShadow: '0 0 16px rgba(167, 139, 250, 0.15)'
-                }}>
-                  <img src={circleLogo} alt="BalanceFlow" style={{ width: '30px', height: '30px' }} />
-                </div>
-                <h3 style={{ fontSize: '1.4rem', color: '#fff', fontFamily: 'var(--font-headings)' }}>
-                  Your insights will grow with your practice.
-                </h3>
-                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', lineHeight: '1.5' }}>
-                  Log a few yoga, meditation or breathing sessions to discover patterns in your stress, energy, mood and sleep.
+                <style>{`
+                  @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                  }
+                `}</style>
+                <RefreshCw 
+                  size={36} 
+                  style={{ 
+                    color: 'var(--color-teal-light)', 
+                    animation: 'spin 2s linear infinite' 
+                  }} 
+                />
+                <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+                  Analyzing wellness logs and fetching AI insights...
                 </p>
-                <button onClick={() => handleOpenEntryModal()} className="btn btn-primary" style={{ marginTop: '8px' }}>
-                  <Plus size={16} />
-                  <span>Log First Practice</span>
-                </button>
               </div>
             ) : (
               <>
-                {/* Grid of Cards */}
-                <div className="app-grid app-grid-2">
-                  <InsightCard 
-                    title="Pattern Summary" 
-                    badge={aiInsights.pattern.badge}
-                    type="pattern"
-                    content={aiInsights.pattern.content}
-                  />
+                {insightsError && (
+                  <div style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '12px',
+                    padding: '12px 20px',
+                    marginBottom: '20px',
+                    color: '#fca5a5',
+                    fontSize: '0.9rem',
+                    textAlign: 'left'
+                  }}>
+                    {insightsError}
+                  </div>
+                )}
 
-                  <InsightCard 
-                    title="Gentle Recommendation" 
-                    badge={aiInsights.recommendation.badge}
-                    type="recommendation"
-                    content={aiInsights.recommendation.content}
-                  />
+                {backendInsights ? (
+                  <>
+                    {/* Grid of Cards */}
+                    <div className="app-grid app-grid-2">
+                      <InsightCard 
+                        title="Pattern Summary" 
+                        badge={aiInsights.pattern.badge}
+                        type="pattern"
+                        content={backendInsights.pattern_summary}
+                      />
 
-                  <InsightCard 
-                    title="Stress Trend Insight" 
-                    badge={aiInsights.stress.badge}
-                    type="connection"
-                    content={aiInsights.stress.content}
-                  />
+                      <InsightCard 
+                        title="Gentle Recommendation" 
+                        badge={aiInsights.recommendation.badge}
+                        type="recommendation"
+                        content={backendInsights.gentle_recommendation}
+                      />
 
-                  <InsightCard 
-                    title="Sleep & Energy Connection" 
-                    badge={aiInsights.sleep.badge}
-                    type="connection"
-                    content={aiInsights.sleep.content}
-                  />
+                      <InsightCard 
+                        title="Stress Trend Insight" 
+                        badge={aiInsights.stress.badge}
+                        type="connection"
+                        content={backendInsights.stress_trend_insight}
+                      />
 
-                  <InsightCard 
-                    title="Reflection Summary" 
-                    badge={aiInsights.reflection.badge}
-                    type="reflection"
-                    content={aiInsights.reflection.content}
-                    reflectionPrompt={aiInsights.reflection.prompt}
-                    onReflectClick={() => {
-                      setCurrentTab('today');
-                      setTimeout(() => {
-                        const el = document.querySelector('.reflection-input');
-                        if (el) (el as HTMLInputElement).focus();
-                      }, 150);
-                    }}
-                  />
+                      <InsightCard 
+                        title="Sleep & Energy Connection" 
+                        badge={aiInsights.sleep.badge}
+                        type="connection"
+                        content={backendInsights.sleep_energy_connection}
+                      />
 
-                  <InsightCard 
-                    title="Next Week Focus" 
-                    badge={aiInsights.focus.badge}
-                    type="recommendation"
-                    content={aiInsights.focus.content}
-                  />
-                </div>
+                      <InsightCard 
+                        title="Reflection Summary" 
+                        badge={aiInsights.reflection.badge}
+                        type="reflection"
+                        content={backendInsights.reflection_summary}
+                        reflectionPrompt={aiInsights.reflection.prompt}
+                        onReflectClick={() => {
+                          setCurrentTab('today');
+                          setTimeout(() => {
+                            const el = document.querySelector('.reflection-input');
+                            if (el) (el as HTMLInputElement).focus();
+                          }, 150);
+                        }}
+                      />
 
-                <div style={{ marginTop: '24px' }}>
-                  <InsightCard 
-                    title="How insights are generated"
-                    badge="Disclaimer"
-                    type="insight"
-                    content="Insights are generated from your logged wellness activities and reflections. They are designed to support personal awareness, habit tracking and self-reflection. They are not medical advice, diagnosis or treatment."
-                  />
-                </div>
+                      <InsightCard 
+                        title="Next Week Focus" 
+                        badge={aiInsights.focus.badge}
+                        type="recommendation"
+                        content={backendInsights.next_week_focus}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '24px' }}>
+                      <InsightCard 
+                        title="How insights are generated"
+                        badge="Disclaimer"
+                        type="insight"
+                        content={backendInsights.disclaimer}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  entries.length === 0 ? (
+                    /* Beautiful Empty State */
+                    <div className="glass-panel" style={{
+                      padding: '60px 24px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '20px',
+                      border: '1px dashed rgba(255, 255, 255, 0.1)',
+                      marginTop: '12px'
+                    }}>
+                      <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(167, 139, 250, 0.08)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '8px',
+                        border: '1.5px solid rgba(167, 139, 250, 0.2)',
+                        boxShadow: '0 0 16px rgba(167, 139, 250, 0.15)'
+                      }}>
+                        <img src={circleLogo} alt="BalanceFlow" style={{ width: '30px', height: '30px' }} />
+                      </div>
+                      <h3 style={{ fontSize: '1.4rem', color: '#fff', fontFamily: 'var(--font-headings)' }}>
+                        Your insights will grow with your practice.
+                      </h3>
+                      <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', lineHeight: '1.5' }}>
+                        Log a few yoga, meditation or breathing sessions to discover patterns in your stress, energy, mood and sleep.
+                      </p>
+                      <button onClick={() => handleOpenEntryModal()} className="btn btn-primary" style={{ marginTop: '8px' }}>
+                        <Plus size={16} />
+                        <span>Log First Practice</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Grid of Cards */}
+                      <div className="app-grid app-grid-2">
+                        <InsightCard 
+                          title="Pattern Summary" 
+                          badge={aiInsights.pattern.badge}
+                          type="pattern"
+                          content={aiInsights.pattern.content}
+                        />
+
+                        <InsightCard 
+                          title="Gentle Recommendation" 
+                          badge={aiInsights.recommendation.badge}
+                          type="recommendation"
+                          content={aiInsights.recommendation.content}
+                        />
+
+                        <InsightCard 
+                          title="Stress Trend Insight" 
+                          badge={aiInsights.stress.badge}
+                          type="connection"
+                          content={aiInsights.stress.content}
+                        />
+
+                        <InsightCard 
+                          title="Sleep & Energy Connection" 
+                          badge={aiInsights.sleep.badge}
+                          type="connection"
+                          content={aiInsights.sleep.content}
+                        />
+
+                        <InsightCard 
+                          title="Reflection Summary" 
+                          badge={aiInsights.reflection.badge}
+                          type="reflection"
+                          content={aiInsights.reflection.content}
+                          reflectionPrompt={aiInsights.reflection.prompt}
+                          onReflectClick={() => {
+                            setCurrentTab('today');
+                            setTimeout(() => {
+                              const el = document.querySelector('.reflection-input');
+                              if (el) (el as HTMLInputElement).focus();
+                            }, 150);
+                          }}
+                        />
+
+                        <InsightCard 
+                          title="Next Week Focus" 
+                          badge={aiInsights.focus.badge}
+                          type="recommendation"
+                          content={aiInsights.focus.content}
+                        />
+                      </div>
+
+                      <div style={{ marginTop: '24px' }}>
+                        <InsightCard 
+                          title="How insights are generated"
+                          badge="Disclaimer"
+                          type="insight"
+                          content="Insights are generated from your logged wellness activities and reflections. They are designed to support personal awareness, habit tracking and self-reflection. They are not medical advice, diagnosis or treatment."
+                        />
+                      </div>
+                    </>
+                  )
+                )}
               </>
             )}
           </div>
         )}
+
 
       </div>
 

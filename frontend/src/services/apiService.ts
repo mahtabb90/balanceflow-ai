@@ -1,4 +1,4 @@
-import type { WellnessEntry, BackendWellnessEntry } from '../types/wellness';
+import type { WellnessEntry, BackendWellnessEntry, AIInsightsResponse } from '../types/wellness';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
@@ -136,3 +136,12 @@ export async function deleteAllEntries(): Promise<void> {
     throw new Error(`Failed to delete all entries: ${response.statusText}`);
   }
 }
+
+export async function getAIInsights(): Promise<AIInsightsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/ai/insights`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch AI insights: ${response.statusText}`);
+  }
+  return await response.json();
+}
+

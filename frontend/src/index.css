@@ -811,3 +811,23 @@ a:hover {
     gap: 24px;
   }
 }
+
+/* Responsive heights for practices images and cards */
+.practice-card-header {
+  height: 140px;
+}
+@media (max-width: 768px) {
+  .practice-card-header {
+    height: 120px;
+  }
+}
+
+.practice-detail-hero {
+  height: 200px;
+}
+@media (max-width: 768px) {
+  .practice-detail-hero {
+    height: 140px;
+  }
+}
+

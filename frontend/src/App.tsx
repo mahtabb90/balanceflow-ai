@@ -177,8 +177,59 @@ const INITIAL_ENTRIES: WellnessEntry[] = [
   }
 ];
 
+const RECOMMENDED_PRACTICE: Practice = {
+  id: 'p_recommendation',
+  title: '12 min Gentle Yoga Reset',
+  type: 'Yoga',
+  duration: 12,
+  level: 'Beginner',
+  goal: 'Release shoulder tightness and invite calm balance',
+  description: 'A soothing sequence focused on neck rolls, chest openers, and gentle shoulder stretches. Designed to ease desktop fatigue and quiet active tension.',
+  gradientClass: 'grad-yoga-1',
+  benefits: ['Soothes desk posture fatigue', 'Encourages gentle movement', 'May support calm focus'],
+  imageUrl: '/practice-images/neck-shoulder-release.webp',
+  sequence: [
+    {
+      pose_name: 'Neck Tilt',
+      duration_minutes: 2,
+      instruction: 'Tilt your head to one side, bringing ear toward shoulder. Hold and repeat on other side.',
+      breath_cue: 'Breathe softly into the side of the neck',
+      intention: 'Easing neck tightness'
+    },
+    {
+      pose_name: 'Shoulder Rolls',
+      duration_minutes: 2,
+      instruction: 'Roll your shoulders in slow, gentle backward and forward circles.',
+      breath_cue: 'Inhale lifting, exhale rolling back',
+      intention: 'Releasing upper back and collarbone stiffness'
+    },
+    {
+      pose_name: 'Chest Opener',
+      duration_minutes: 3,
+      instruction: 'Interlace your fingers behind your head and open your elbows wide, looking up gently.',
+      breath_cue: 'Expand chest fully on inhalation',
+      intention: 'Posture alignment and chest stretch'
+    },
+    {
+      pose_name: 'Upper Back Stretch',
+      duration_minutes: 3,
+      instruction: 'Reach your arms forward, interlace your fingers, and round your upper back gently.',
+      breath_cue: 'Breathe into space between shoulder blades',
+      intention: 'Stretching upper back muscles'
+    },
+    {
+      pose_name: 'Seated Rest',
+      duration_minutes: 2,
+      instruction: 'Let your arms drop, rest quietly, and notice physical release in upper body.',
+      breath_cue: 'Natural resting breath',
+      intention: 'Integrating practice benefits'
+    }
+  ]
+};
+
 export default function App() {
   const [currentTab, setCurrentTab] = useState<string>('today');
+  const [todayImgFailed, setTodayImgFailed] = useState(false);
   
   // Entries Database State
   const [entries, setEntries] = useState<WellnessEntry[]>(INITIAL_ENTRIES);
@@ -1094,9 +1145,7 @@ export default function App() {
                   <div style={{
                     height: '135px',
                     borderRadius: '12px',
-                    backgroundImage: `linear-gradient(to bottom, rgba(6, 10, 18, 0.15) 0%, rgba(6, 10, 18, 0.75) 100%), url(${wellnessYogaFlow})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center 20%',
+                    backgroundColor: '#0c111e',
                     marginBottom: '10px',
                     position: 'relative',
                     overflow: 'hidden',
@@ -1105,6 +1154,30 @@ export default function App() {
                     alignItems: 'flex-end',
                     padding: '16px'
                   }}>
+                    {/* Dark gradient overlay for readability */}
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to bottom, rgba(6, 10, 18, 0.4) 0%, rgba(6, 10, 18, 0.9) 100%)',
+                      zIndex: 1
+                    }} />
+
+                    {/* Practice image with robust visual fallback */}
+                    <img 
+                      src={todayImgFailed ? wellnessYogaFlow : (RECOMMENDED_PRACTICE.imageUrl || wellnessYogaFlow)}
+                      onError={() => setTodayImgFailed(true)}
+                      alt=""
+                      loading="lazy"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        zIndex: 0
+                      }}
+                    />
+
                     <img 
                       src={circleLogo} 
                       alt="" 
@@ -1115,7 +1188,8 @@ export default function App() {
                         width: '24px',
                         height: '24px',
                         opacity: 0.35,
-                        pointerEvents: 'none'
+                        pointerEvents: 'none',
+                        zIndex: 2
                       }} 
                     />
                     <div style={{
@@ -1125,14 +1199,15 @@ export default function App() {
                       fontWeight: 600,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)'
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
+                      zIndex: 2
                     }}>
                       Mindful Breath & Flow
                     </div>
                   </div>
-
+ 
                   <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '4px', fontFamily: 'var(--font-headings)' }}>
-                    12 min Gentle Yoga Reset
+                    {RECOMMENDED_PRACTICE.title}
                   </h3>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4', maxWidth: '92%' }}>
                     Based on your recent logs showing mild body tension, we recommend this gentle session. It focuses on releasing shoulder tightness and inviting a calm balance.
@@ -1140,64 +1215,16 @@ export default function App() {
                   <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Clock size={14} />
-                      <span>12 Min</span>
+                      <span>{RECOMMENDED_PRACTICE.duration} Min</span>
                     </div>
                     <div>
-                      <span>Level: Beginner</span>
+                      <span>Level: {RECOMMENDED_PRACTICE.level}</span>
                     </div>
                   </div>
                 </div>
-
+ 
                 <button 
-                  onClick={() => handleOpenPracticeDetail({
-                    id: 'p_recommendation',
-                    title: '12 min Gentle Yoga Reset',
-                    type: 'Yoga',
-                    duration: 12,
-                    level: 'Beginner',
-                    goal: 'Release shoulder tightness and invite calm balance',
-                    description: 'A soothing sequence focused on neck rolls, chest openers, and gentle shoulder stretches. Designed to ease desktop fatigue and quiet active tension.',
-                    gradientClass: 'grad-yoga-1',
-                    benefits: ['Soothes desk posture fatigue', 'Encourages gentle movement', 'May support calm focus'],
-                    imageUrl: '/practice-images/neck-shoulder-release.webp',
-                    sequence: [
-                      {
-                        pose_name: 'Neck Tilt',
-                        duration_minutes: 2,
-                        instruction: 'Tilt your head to one side, bringing ear toward shoulder. Hold and repeat on other side.',
-                        breath_cue: 'Breathe softly into the side of the neck',
-                        intention: 'Easing neck tightness'
-                      },
-                      {
-                        pose_name: 'Shoulder Rolls',
-                        duration_minutes: 2,
-                        instruction: 'Roll your shoulders in slow, gentle backward and forward circles.',
-                        breath_cue: 'Inhale lifting, exhale rolling back',
-                        intention: 'Releasing upper back and collarbone stiffness'
-                      },
-                      {
-                        pose_name: 'Chest Opener',
-                        duration_minutes: 3,
-                        instruction: 'Interlace your fingers behind your head and open your elbows wide, looking up gently.',
-                        breath_cue: 'Expand chest fully on inhalation',
-                        intention: 'Posture alignment and chest stretch'
-                      },
-                      {
-                        pose_name: 'Upper Back Stretch',
-                        duration_minutes: 3,
-                        instruction: 'Reach your arms forward, interlace your fingers, and round your upper back gently.',
-                        breath_cue: 'Breathe into space between shoulder blades',
-                        intention: 'Stretching upper back muscles'
-                      },
-                      {
-                        pose_name: 'Seated Rest',
-                        duration_minutes: 2,
-                        instruction: 'Let your arms drop, rest quietly, and notice physical release in upper body.',
-                        breath_cue: 'Natural resting breath',
-                        intention: 'Integrating practice benefits'
-                      }
-                    ]
-                  })}
+                  onClick={() => handleOpenPracticeDetail(RECOMMENDED_PRACTICE)}
                   className="btn btn-primary" 
                   style={{ width: '100%', justifyContent: 'center' }}
                 >

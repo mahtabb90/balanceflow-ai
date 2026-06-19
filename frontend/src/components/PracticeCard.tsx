@@ -9,6 +9,8 @@ interface PracticeCardProps {
 
 export const PracticeCard: React.FC<PracticeCardProps> = ({ practice, onStart }) => {
   const [imgFailed, setImgFailed] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  
   const getBadgeColorClass = (type: string) => {
     switch (type) {
       case 'Yoga':
@@ -25,6 +27,8 @@ export const PracticeCard: React.FC<PracticeCardProps> = ({ practice, onStart })
   return (
     <div 
       className="glass-panel" 
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -37,9 +41,8 @@ export const PracticeCard: React.FC<PracticeCardProps> = ({ practice, onStart })
     >
       {/* Visual Header using gradients */}
       <div 
-        className={practice.gradientClass} 
+        className={`practice-card-header ${practice.gradientClass}`} 
         style={{
-          height: '130px',
           width: '100%',
           position: 'relative',
           display: 'flex',
@@ -56,7 +59,7 @@ export const PracticeCard: React.FC<PracticeCardProps> = ({ practice, onStart })
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to bottom, transparent 40%, rgba(6, 10, 18, 0.8) 100%)',
+          background: 'linear-gradient(to bottom, rgba(6, 10, 18, 0.4) 0%, rgba(6, 10, 18, 0.9) 100%)',
           zIndex: 1
         }} />
 
@@ -65,6 +68,7 @@ export const PracticeCard: React.FC<PracticeCardProps> = ({ practice, onStart })
             src={practice.imageUrl} 
             onError={() => setImgFailed(true)} 
             alt={practice.title}
+            loading="lazy"
             style={{
               position: 'absolute',
               inset: 0,
@@ -72,7 +76,9 @@ export const PracticeCard: React.FC<PracticeCardProps> = ({ practice, onStart })
               height: '100%',
               objectFit: 'cover',
               zIndex: 0,
-              opacity: 0.5
+              opacity: 0.85,
+              transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+              transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           />
         )}

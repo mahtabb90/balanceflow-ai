@@ -412,3 +412,21 @@ It demonstrates:
 BalanceFlow is a personal wellness and reflection app.
 
 It does not provide medical advice, diagnosis, treatment or therapy. AI-generated insights are for personal awareness only.
+
+---
+
+## 🚀 Live Demo
+
+Try BalanceFlow live here:
+
+https://balanceflow-ai.vercel.app
+
+---
+
+## 🔌 API
+
+Backend API:
+https://balanceflow-ai.onrender.com
+
+API Docs:
+https://balanceflow-ai.onrender.com/docs

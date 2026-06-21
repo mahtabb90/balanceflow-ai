@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { StatCard } from './components/StatCard';
 import { PracticeCard } from './components/PracticeCard';
 import circleLogo from './assets/balanceflow-circle-logo.png';
 import wellnessYogaFlow from './assets/wellness_yoga_flow.png';
 import balanceSpaceGlow from './assets/balance_space_glow.png';
-import type { Practice } from './components/PracticeCard';
+import type { Practice } from './types/practice';
 import { ChartCard } from './components/ChartCard';
 import { InsightCard } from './components/InsightCard';
+import { getAIInsights, getWellnessMetrics } from './services/aiInsightService';
 import { BreathingCircle } from './components/BreathingCircle';
 import { EntryModal } from './components/EntryModal';
 import { PracticeDetailModal } from './components/PracticeDetailModal';
-import type { WellnessEntry } from './types/wellness';
+import type { WellnessEntry, AIInsightsResponse } from './types/wellness';
+import { getEntries, createEntry, deleteAllEntries, formatEntryDate, getAIInsights as getAIInsightsApi } from './services/apiService';
 import { 
   BarChart, 
   Bar, 
@@ -175,11 +177,106 @@ const INITIAL_ENTRIES: WellnessEntry[] = [
   }
 ];
 
+const RECOMMENDED_PRACTICE: Practice = {
+  id: 'p_recommendation',
+  title: '12 min Gentle Yoga Reset',
+  type: 'Yoga',
+  duration: 12,
+  level: 'Beginner',
+  goal: 'Release shoulder tightness and invite calm balance',
+  description: 'A soothing sequence focused on neck rolls, chest openers, and gentle shoulder stretches. Designed to ease desktop fatigue and quiet active tension.',
+  gradientClass: 'grad-yoga-1',
+  benefits: ['Soothes desk posture fatigue', 'Encourages gentle movement', 'May support calm focus'],
+  imageUrl: '/practice-images/neck-shoulder-release.webp',
+  sequence: [
+    {
+      pose_name: 'Neck Tilt',
+      duration_minutes: 2,
+      instruction: 'Tilt your head to one side, bringing ear toward shoulder. Hold and repeat on other side.',
+      breath_cue: 'Breathe softly into the side of the neck',
+      intention: 'Easing neck tightness'
+    },
+    {
+      pose_name: 'Shoulder Rolls',
+      duration_minutes: 2,
+      instruction: 'Roll your shoulders in slow, gentle backward and forward circles.',
+      breath_cue: 'Inhale lifting, exhale rolling back',
+      intention: 'Releasing upper back and collarbone stiffness'
+    },
+    {
+      pose_name: 'Chest Opener',
+      duration_minutes: 3,
+      instruction: 'Interlace your fingers behind your head and open your elbows wide, looking up gently.',
+      breath_cue: 'Expand chest fully on inhalation',
+      intention: 'Posture alignment and chest stretch'
+    },
+    {
+      pose_name: 'Upper Back Stretch',
+      duration_minutes: 3,
+      instruction: 'Reach your arms forward, interlace your fingers, and round your upper back gently.',
+      breath_cue: 'Breathe into space between shoulder blades',
+      intention: 'Stretching upper back muscles'
+    },
+    {
+      pose_name: 'Seated Rest',
+      duration_minutes: 2,
+      instruction: 'Let your arms drop, rest quietly, and notice physical release in upper body.',
+      breath_cue: 'Natural resting breath',
+      intention: 'Integrating practice benefits'
+    }
+  ]
+};
+
 export default function App() {
   const [currentTab, setCurrentTab] = useState<string>('today');
+  const [todayImgFailed, setTodayImgFailed] = useState(false);
   
   // Entries Database State
   const [entries, setEntries] = useState<WellnessEntry[]>(INITIAL_ENTRIES);
+  const [isBackendOffline, setIsBackendOffline] = useState<boolean>(false);
+
+  // AI Insights State
+  const [backendInsights, setBackendInsights] = useState<AIInsightsResponse | null>(null);
+  const [isLoadingInsights, setIsLoadingInsights] = useState<boolean>(false);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
+
+
+  // Load entries on mount
+  useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        const data = await getEntries();
+        setEntries(data);
+        setIsBackendOffline(false);
+      } catch (error) {
+        console.error("Failed to fetch entries from backend, falling back to local demo data:", error);
+        setIsBackendOffline(true);
+      }
+    };
+    fetchEntries();
+  }, []);
+
+  // Fetch backend AI insights when switching to the insights tab or when entry count changes
+  useEffect(() => {
+    const fetchBackendInsights = async () => {
+      setIsLoadingInsights(true);
+      setInsightsError(null);
+      try {
+        const data = await getAIInsightsApi();
+        setBackendInsights(data);
+      } catch (error) {
+        console.error("Failed to load backend insights:", error);
+        setInsightsError("AI insights are temporarily unavailable. Your local wellness patterns are still available.");
+      } finally {
+        setIsLoadingInsights(false);
+      }
+    };
+
+    if (currentTab === 'insights') {
+      fetchBackendInsights();
+    }
+  }, [currentTab, entries.length]);
+
 
   // Quick reflection text box input
   const [newReflectionText, setNewReflectionText] = useState<string>('');
@@ -234,20 +331,29 @@ export default function App() {
   };
 
   // Save wellness entry log
-  const handleSaveEntry = (newLog: Omit<WellnessEntry, 'id' | 'date' | 'day'>) => {
-    const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const now = new Date();
-    
-    const entry: WellnessEntry = {
-      ...newLog,
-      id: 'e_' + Math.random().toString(36).substr(2, 9),
-      date: now.toISOString().split('T')[0],
-      day: daysShort[now.getDay()],
-    };
-
-    setEntries(prev => [...prev, entry]);
+  const handleSaveEntry = async (newLog: Omit<WellnessEntry, 'id' | 'date' | 'day'>) => {
     setIsModalOpen(false);
-    triggerToast("Session logged. Your dashboard has been updated.");
+    try {
+      const savedEntry = await createEntry(newLog);
+      setEntries(prev => [...prev, savedEntry]);
+      setIsBackendOffline(false);
+      triggerToast("Session logged. Your dashboard has been updated.");
+    } catch (error) {
+      console.error("Failed to save entry to backend, falling back to local storage:", error);
+      setIsBackendOffline(true);
+      
+      // Fallback behavior
+      const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const now = new Date();
+      const fallbackEntry: WellnessEntry = {
+        ...newLog,
+        id: 'e_' + Math.random().toString(36).substr(2, 9),
+        date: now.toISOString().split('T')[0],
+        day: daysShort[now.getDay()],
+      };
+      setEntries(prev => [...prev, fallbackEntry]);
+      triggerToast("Backend connection unavailable. Session saved locally.");
+    }
     
     // Automatically direct to Dashboard to see updates
     setCurrentTab('dashboard');
@@ -271,16 +377,10 @@ export default function App() {
   };
 
   // Submit quick reflection from Today page text area
-  const handleSaveReflection = (e: React.FormEvent) => {
+  const handleSaveReflection = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newReflectionText.trim()) {
-      // Append a quick meditation/pause log to store reflection in database
-      const now = new Date();
-      const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const entry: WellnessEntry = {
-        id: 'e_' + Math.random().toString(36).substr(2, 9),
-        date: now.toISOString().split('T')[0],
-        day: daysShort[now.getDay()],
+      const logData: Omit<WellnessEntry, 'id' | 'date' | 'day'> = {
         type: 'Meditation',
         title: 'Mindful Reflection',
         duration: 5,
@@ -294,26 +394,75 @@ export default function App() {
         sleepQuality: 7,
         reflection: newReflectionText.trim()
       };
-      
-      setEntries(prev => [...prev, entry]);
+
       setNewReflectionText('');
-      triggerToast("Reflection logged. Entry added to your history.");
+
+      try {
+        const savedEntry = await createEntry(logData);
+        setEntries(prev => [...prev, savedEntry]);
+        setIsBackendOffline(false);
+        triggerToast("Reflection logged. Entry added to your history.");
+      } catch (error) {
+        console.error("Failed to save reflection to backend, falling back to local storage:", error);
+        setIsBackendOffline(true);
+        
+        // Fallback behavior
+        const now = new Date();
+        const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const fallbackEntry: WellnessEntry = {
+          ...logData,
+          id: 'e_' + Math.random().toString(36).substr(2, 9),
+          date: now.toISOString().split('T')[0],
+          day: daysShort[now.getDay()],
+        };
+        setEntries(prev => [...prev, fallbackEntry]);
+        triggerToast("Backend connection unavailable. Reflection saved locally.");
+      }
     }
   };
 
   // Clear database logs (to test empty states)
-  const handleClearLogs = () => {
-    setEntries([]);
-    triggerToast("All history cleared. Viewing empty states.");
+  const handleClearLogs = async () => {
+    try {
+      await deleteAllEntries();
+      setEntries([]);
+      setIsBackendOffline(false);
+      triggerToast("All history cleared. Viewing empty states.");
+    } catch (error) {
+      console.error("Failed to clear entries on backend:", error);
+      setIsBackendOffline(true);
+      
+      // Fallback
+      setEntries([]);
+      triggerToast("Backend connection unavailable. Cleared local view.");
+    }
   };
 
   // Reset to seed demo database
-  const handleLoadDemoData = () => {
-    setEntries(INITIAL_ENTRIES);
-    triggerToast("Demo data reloaded successfully.");
+  const handleLoadDemoData = async () => {
+    try {
+      try {
+        await deleteAllEntries();
+      } catch {
+        // Ignore pre-clear error
+      }
+      
+      const seededEntries: WellnessEntry[] = [];
+      for (const initial of INITIAL_ENTRIES) {
+        const saved = await createEntry(initial);
+        seededEntries.push(saved);
+      }
+      setEntries(seededEntries);
+      setIsBackendOffline(false);
+      triggerToast("Demo data reloaded on backend successfully.");
+    } catch (error) {
+      console.error("Failed to load demo data on backend, falling back to local memory:", error);
+      setIsBackendOffline(true);
+      setEntries(INITIAL_ENTRIES);
+      triggerToast("Backend connection unavailable. Demo data reloaded locally.");
+    }
   };
 
-  // List of practices for Practice Library
   const practices: Practice[] = [
     {
       id: 'p1',
@@ -324,7 +473,45 @@ export default function App() {
       goal: 'Gentle morning energy and posture balance',
       description: 'A slow-paced sequence targeting shoulder release and soft lunges to awaken the muscles and warm up the body with kind, mindful movements.',
       gradientClass: 'grad-yoga-1',
-      benefits: ['Encourages gentle body movement', 'May support calm focus', 'Soothes morning shoulder stiffness']
+      benefits: ['Encourages gentle body movement', 'May support calm focus', 'Soothes morning shoulder stiffness'],
+      imageUrl: '/practice-images/morning-yoga-flow.webp',
+      sequence: [
+        {
+          pose_name: 'Seated Breath',
+          duration_minutes: 2,
+          instruction: 'Sit comfortably, close your eyes, and focus on deep breathing. Let your shoulders soften.',
+          breath_cue: 'Inhale slow, exhale long',
+          intention: 'Grounding your attention'
+        },
+        {
+          pose_name: 'Cat-Cow Flow',
+          duration_minutes: 3,
+          instruction: 'Move to hands and knees. Alternate between arching your back up and letting your belly sink down.',
+          breath_cue: 'Inhale arching, exhale rounding',
+          intention: 'Warming the spine and shoulders'
+        },
+        {
+          pose_name: 'Low Lunge',
+          duration_minutes: 4,
+          instruction: 'Step one foot forward, sink your hips gently, and lift your chest. Switch sides halfway.',
+          breath_cue: 'Breathe steadily to support hip opening',
+          intention: 'Stretching hip flexors gently'
+        },
+        {
+          pose_name: 'Forward Fold',
+          duration_minutes: 3,
+          instruction: 'Stand up and fold forward from your waist. Let your neck hang loose and shake your head softly.',
+          breath_cue: 'Exhale folding deeper, relaxing the neck',
+          intention: 'Releasing lower back tension'
+        },
+        {
+          pose_name: 'Standing Balance',
+          duration_minutes: 3,
+          instruction: 'Shift weight to one foot and focus on a single point in front of you. Change sides midway.',
+          breath_cue: 'Clear, quiet breathing supports stability',
+          intention: 'Centering focus and physical balance'
+        }
+      ]
     },
     {
       id: 'p2',
@@ -335,7 +522,45 @@ export default function App() {
       goal: 'Release physical tightness in hips and low back',
       description: 'Focuses on deep hip openers and extended forward folds. Designed to release body tension, clear physical tightness, and invite a deep sense of calm.',
       gradientClass: 'grad-yoga-2',
-      benefits: ['Helps you slow down and breathe', 'Soothes muscle tightness in back', 'Invites a deep sense of calm balance']
+      benefits: ['Helps you slow down and breathe', 'Soothes muscle tightness in back', 'Invites a deep sense of calm balance'],
+      imageUrl: '/practice-images/stress-relief-yoga.webp',
+      sequence: [
+        {
+          pose_name: "Child’s Pose",
+          duration_minutes: 3,
+          instruction: 'Sit back on your heels, extend your arms forward, and rest your forehead on the floor.',
+          breath_cue: 'Deep belly breathing',
+          intention: 'Calm reflection and quiet presence'
+        },
+        {
+          pose_name: 'Seated Side Stretch',
+          duration_minutes: 3,
+          instruction: 'Sit cross-legged, reach one arm overhead, and stretch your side body gently. Repeat on other side.',
+          breath_cue: 'Breathe slowly into your side ribs',
+          intention: 'Releasing tightness in side body'
+        },
+        {
+          pose_name: 'Figure Four Stretch',
+          duration_minutes: 5,
+          instruction: 'Lie on your back, cross one ankle over the opposite knee, and draw your thighs closer. Switch sides midway.',
+          breath_cue: 'Soft, long exhalations on hip release',
+          intention: 'Releasing lower back and hip tension'
+        },
+        {
+          pose_name: 'Forward Fold',
+          duration_minutes: 4,
+          instruction: 'Sit with legs extended straight in front of you, and reach forward from your hips.',
+          breath_cue: 'Quiet, steady breathing through nose',
+          intention: 'Stretching hamstrings and lower back'
+        },
+        {
+          pose_name: 'Supported Rest',
+          duration_minutes: 5,
+          instruction: 'Lie flat on your back with arms relaxed at your sides and eyes closed.',
+          breath_cue: 'Let your natural, quiet breath return',
+          intention: 'Physical integration and deep ease'
+        }
+      ]
     },
     {
       id: 'p3',
@@ -346,7 +571,45 @@ export default function App() {
       goal: 'Relax muscles and prepare for sound sleep',
       description: 'Gentle seated stretching, shoulder openers, and child’s pose to help you quiet your thoughts, release postural fatigue, and prepare for a restful sleep.',
       gradientClass: 'grad-yoga-3',
-      benefits: ['Quietens postural fatigue', 'Prepares physical body for deep rest', 'Eases transition to sleep']
+      benefits: ['Quietens postural fatigue', 'Prepares physical body for deep rest', 'Eases transition to sleep'],
+      imageUrl: '/practice-images/evening-stretch.webp',
+      sequence: [
+        {
+          pose_name: 'Neck Rolls',
+          duration_minutes: 2,
+          instruction: 'Slowly roll your head in gentle circles to release tightness in neck muscles.',
+          breath_cue: 'Slow, easy breathing cycles',
+          intention: 'Releasing tension from sitting'
+        },
+        {
+          pose_name: 'Shoulder Opener',
+          duration_minutes: 2,
+          instruction: 'Clasp your hands behind your back and gently pull down, lifting your chest slightly.',
+          breath_cue: 'Inhale lifting, exhale releasing shoulders',
+          intention: 'Opening front chest and shoulders'
+        },
+        {
+          pose_name: 'Seated Forward Fold',
+          duration_minutes: 2,
+          instruction: 'Sit cross-legged, crawl your fingers forward, and rest your head down.',
+          breath_cue: 'Release tension on exhalations',
+          intention: 'Spinal elongation and calming the mind'
+        },
+        {
+          pose_name: 'Supine Twist',
+          duration_minutes: 2,
+          instruction: 'Lie on your back, drop knees to one side, and stretch arms wide. Switch sides midway.',
+          breath_cue: 'Natural, gentle recovery rhythm',
+          intention: 'Relaxing back muscles'
+        },
+        {
+          pose_name: 'Legs Rest Position',
+          duration_minutes: 2,
+          instruction: 'Place your legs resting flat or bent on your mat, keeping body completely still.',
+          breath_cue: 'Quiet resting breath',
+          intention: 'Calming your nervous system'
+        }
+      ]
     },
     {
       id: 'p4',
@@ -357,7 +620,45 @@ export default function App() {
       goal: 'Quiet the mind and transition to peaceful rest',
       description: 'A soft body-scan meditation focusing on slow breath awareness to release day-to-day mind chatter, settle physical tension, and ease into deep rest.',
       gradientClass: 'grad-yoga-4',
-      benefits: ['Eases active daily mind chatter', 'Encourages peaceful self-reflection', 'Releases muscle tension safely']
+      benefits: ['Eases active daily mind chatter', 'Encourages peaceful self-reflection', 'Releases muscle tension safely'],
+      imageUrl: '/practice-images/sleep-meditation.webp',
+      sequence: [
+        {
+          pose_name: 'Settle In',
+          duration_minutes: 2,
+          instruction: 'Lie down comfortably in bed, adjust your pillows, and close your eyes.',
+          breath_cue: 'Slow, soothing breaths through nose',
+          intention: 'Unwinding mental activity'
+        },
+        {
+          pose_name: 'Body Scan',
+          duration_minutes: 5,
+          instruction: 'Mentally shift your attention from toes to head, noting and releasing physical tightness.',
+          breath_cue: 'Breathe comfort into each area you scan',
+          intention: 'Physical relaxation and release'
+        },
+        {
+          pose_name: 'Slow Breath',
+          duration_minutes: 4,
+          instruction: 'Extend your exhalations gently to signal your body it is time to rest.',
+          breath_cue: 'Prolonged quiet exhalations',
+          intention: 'Slowing heart rate and relaxing mind'
+        },
+        {
+          pose_name: 'Release the Day',
+          duration_minutes: 3,
+          instruction: 'Let go of thoughts or worries about today. Allow them to drift away with each exhale.',
+          breath_cue: 'Soft, natural exhalations',
+          intention: 'Mental release and quietening thoughts'
+        },
+        {
+          pose_name: 'Quiet Rest',
+          duration_minutes: 1,
+          instruction: 'Rest in quiet stillness, transitioning naturally toward sleep.',
+          breath_cue: 'Let breath breathe itself',
+          intention: 'Transitioning to peaceful sleep'
+        }
+      ]
     },
     {
       id: 'p5',
@@ -368,7 +669,45 @@ export default function App() {
       goal: 'Find instant center and mental clarity',
       description: 'A simple, rhythmic equal breathing exercise to clear your mind, renew focus, and establish an instant sense of calm balance during busy hours.',
       gradientClass: 'grad-yoga-5',
-      benefits: ['Provides an instant mental pause', 'Encourages calm centered focus', 'Helps balance recovery rhythms']
+      benefits: ['Provides an instant mental pause', 'Encourages calm centered focus', 'Helps balance recovery rhythms'],
+      imageUrl: '/practice-images/breathing-reset.webp',
+      sequence: [
+        {
+          pose_name: 'Arrive',
+          duration_minutes: 1,
+          instruction: 'Sit upright, let your hands rest on your knees, and quiet your attention.',
+          breath_cue: 'Soft arrival breaths',
+          intention: 'Centering focus and quiet presence'
+        },
+        {
+          pose_name: 'Inhale Slowly',
+          duration_minutes: 1,
+          instruction: 'Breathe in through your nose, letting your abdomen rise gently (4 seconds).',
+          breath_cue: 'Smooth equal inhalation',
+          intention: 'Oxygenating the body'
+        },
+        {
+          pose_name: 'Exhale Longer',
+          duration_minutes: 1,
+          instruction: 'Exhale slowly through your mouth, relaxing your shoulders and jaw (4 seconds).',
+          breath_cue: 'Easy equal exhalation',
+          intention: 'Releasing mental pressure'
+        },
+        {
+          pose_name: 'Repeat Rhythm',
+          duration_minutes: 1,
+          instruction: 'Maintain this steady, comforting breathing pattern.',
+          breath_cue: 'Comfortable pacing cycles',
+          intention: 'Balancing recovery rhythms'
+        },
+        {
+          pose_name: 'Notice Calm',
+          duration_minutes: 1,
+          instruction: 'Let breath return to its normal rhythm. Feel the steady centering effect.',
+          breath_cue: 'Natural quiet breathing',
+          intention: 'Present moment awareness'
+        }
+      ]
     },
     {
       id: 'p6',
@@ -379,66 +718,60 @@ export default function App() {
       goal: 'Ease muscle tightness from sitting at desk',
       description: 'Gentle stretches targeting neck muscles and shoulder rotations. The perfect quick desk reset to soothe posture fatigue and physical tension.',
       gradientClass: 'grad-yoga-6',
-      benefits: ['Eases upper body posture fatigue', 'Helps release tension from sitting', 'Supports desk recovery rhythm']
+      benefits: ['Eases upper body posture fatigue', 'Helps release tension from sitting', 'Supports desk recovery rhythm'],
+      imageUrl: '/practice-images/neck-shoulder-release.webp',
+      sequence: [
+        {
+          pose_name: 'Neck Tilt',
+          duration_minutes: 2,
+          instruction: 'Tilt your head to one side, bringing ear toward shoulder. Hold and repeat on other side.',
+          breath_cue: 'Breathe softly into the side of the neck',
+          intention: 'Easing neck tightness'
+        },
+        {
+          pose_name: 'Shoulder Rolls',
+          duration_minutes: 2,
+          instruction: 'Roll your shoulders in slow, gentle backward and forward circles.',
+          breath_cue: 'Inhale lifting, exhale rolling back',
+          intention: 'Releasing upper back and collarbone stiffness'
+        },
+        {
+          pose_name: 'Chest Opener',
+          duration_minutes: 3,
+          instruction: 'Interlace your fingers behind your head and open your elbows wide, looking up gently.',
+          breath_cue: 'Expand chest fully on inhalation',
+          intention: 'Posture alignment and chest stretch'
+        },
+        {
+          pose_name: 'Upper Back Stretch',
+          duration_minutes: 3,
+          instruction: 'Reach your arms forward, interlace your fingers, and round your upper back gently.',
+          breath_cue: 'Breathe into space between shoulder blades',
+          intention: 'Stretching upper back muscles'
+        },
+        {
+          pose_name: 'Seated Rest',
+          duration_minutes: 2,
+          instruction: 'Let your arms drop, rest quietly, and notice physical release in upper body.',
+          breath_cue: 'Natural resting breath',
+          intention: 'Integrating practice benefits'
+        }
+      ]
     }
   ];
 
+
   // Dynamic calculations from database
-  const totalPracticeMinutes = entries.reduce((sum, item) => sum + item.duration, 0);
-  
-  // Calculate active consecutive streak from set of unique days
-  const activeDays = new Set(entries.map(item => item.day));
-  const streak = activeDays.size;
-
-  // Yoga impact score (formula is a combination of stress drop and duration minutes)
-  const calculateYogaImpactScore = () => {
-    if (entries.length === 0) return 0;
-    const totalTensionBefore = entries.reduce((sum, item) => sum + item.stressBefore, 0);
-    const totalTensionAfter = entries.reduce((sum, item) => sum + item.stressAfter, 0);
-    
-    // Average Tension Drop
-    const avgTensionDrop = totalTensionBefore > 0 
-      ? ((totalTensionBefore - totalTensionAfter) / totalTensionBefore) * 100 
-      : 0;
-      
-    const avgEnergyAfter = entries.reduce((sum, item) => sum + item.energyAfter, 0) / entries.length;
-    
-    return Math.min(100, Math.round((avgTensionDrop * 0.75) + (avgEnergyAfter * 3.5) + (entries.length * 1.5)));
-  };
-  
-  const yogaImpactScore = calculateYogaImpactScore();
-
-  // Weekly Report counts
-  const yogaSessionsCount = entries.filter(e => e.type === 'Yoga').length;
-  const meditationSessionsCount = entries.filter(e => e.type === 'Meditation').length;
-  const breathingSessionsCount = entries.filter(e => e.type === 'Breathing').length;
-
-  const totalStressBefore = entries.reduce((sum, item) => sum + item.stressBefore, 0);
-  const totalStressAfter = entries.reduce((sum, item) => sum + item.stressAfter, 0);
-  const avgStressReductionPercent = totalStressBefore > 0 
-    ? Math.round(((totalStressBefore - totalStressAfter) / totalStressBefore) * 100) 
-    : 0;
-
-  // Calculate best practice type based on average tension reduction
-  const getBestPracticeType = () => {
-    if (entries.length === 0) return 'None';
-    const categories: ('Yoga' | 'Meditation' | 'Breathing')[] = ['Yoga', 'Meditation', 'Breathing'];
-    let bestCat = 'None';
-    let maxReduction = -1;
-
-    categories.forEach(cat => {
-      const catEntries = entries.filter(e => e.type === cat);
-      if (catEntries.length === 0) return;
-      const reduction = catEntries.reduce((sum, e) => sum + (e.stressBefore - e.stressAfter), 0) / catEntries.length;
-      if (reduction > maxReduction) {
-        maxReduction = reduction;
-        bestCat = cat;
-      }
-    });
-
-    return bestCat === 'Breathing' ? 'Breathing Reset' : bestCat === 'Meditation' ? 'Meditation' : 'Yoga Flow';
-  };
-  const bestPracticeType = getBestPracticeType();
+  const {
+    totalPracticeMinutes,
+    streak,
+    yogaImpactScore,
+    yogaSessionsCount,
+    meditationSessionsCount,
+    breathingSessionsCount,
+    avgStressReductionPercent,
+    bestPracticeType
+  } = getWellnessMetrics(entries);
 
   // Aggregate entries for Recharts Compatibility
   const getAggregatedLogs = (): {
@@ -452,6 +785,19 @@ export default function App() {
   }[] => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     
+    interface DaySummary {
+      minutes: number;
+      stressBeforeSum: number;
+      stressAfterSum: number;
+      stressCount: number;
+      moodSum: number;
+      moodCount: number;
+      energySum: number;
+      energyCount: number;
+      sleepSum: number;
+      sleepCount: number;
+    }
+
     const summaries = days.reduce((acc, d) => {
       acc[d] = {
         minutes: 0,
@@ -466,7 +812,7 @@ export default function App() {
         sleepCount: 0,
       };
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, DaySummary>);
 
     entries.forEach(entry => {
       const d = entry.day;
@@ -513,201 +859,42 @@ export default function App() {
   // Extract reflections
   const reflections = entries
     .filter(e => e.reflection && e.reflection.trim() !== '')
-    .map(e => e.reflection);
+    .map(e => ({ text: e.reflection, createdAt: e.created_at, date: e.date }));
 
-  // Dynamic Rule-Based AI Insights
-  const getDynamicAIInsights = () => {
-    if (entries.length === 0) {
-      return {
-        pattern: { badge: "Early Pattern", content: "" },
-        recommendation: { badge: "Gentle Suggestion", content: "" },
-        stress: { badge: "Early Pattern", content: "" },
-        sleep: { badge: "Early Pattern", content: "" },
-        reflection: { badge: "Reflection Theme", content: "", prompt: "" },
-        focus: { badge: "Gentle Suggestion", content: "" }
-      };
-    }
-
-    const totalMinutes = entries.reduce((sum, item) => sum + item.duration, 0);
-    const avgStressBefore = entries.reduce((sum, item) => sum + item.stressBefore, 0) / entries.length;
-    const avgStressAfter = entries.reduce((sum, item) => sum + item.stressAfter, 0) / entries.length;
-    const avgSleep = entries.reduce((sum, item) => sum + item.sleepQuality, 0) / entries.length;
-
-    const themesList = ['calm', 'tired', 'stress', 'sleep', 'focus', 'energy', 'gratitude', 'tension', 'balance'];
-    const themeDisplayNames: Record<string, string> = {
-      calm: 'Calm',
-      tired: 'Tired',
-      stress: 'Stress',
-      sleep: 'Sleep',
-      focus: 'Focus',
-      energy: 'Energy',
-      gratitude: 'Gratitude',
-      tension: 'Tension',
-      balance: 'Balance'
-    };
-
-    if (entries.length >= 1 && entries.length <= 2) {
-      const sessionWord = entries.length === 1 ? "session" : "sessions";
-      
-      const matchedThemes: string[] = [];
-      entries.forEach(e => {
-        if (e.reflection) {
-          const text = e.reflection.toLowerCase();
-          themesList.forEach(theme => {
-            if (text.includes(theme) && !matchedThemes.includes(theme)) {
-              matchedThemes.push(theme);
-            }
-          });
-        }
-      });
-
-      let reflectionContent = "Continue logging reflections to discover recurring wellness themes.";
-      let reflectionBadge = "Early Pattern";
-      if (matchedThemes.length > 0) {
-        const capitalized = matchedThemes.map(t => themeDisplayNames[t] || t);
-        if (capitalized.length === 1) {
-          reflectionContent = `Common theme observed this week:\n• ${capitalized[0]}`;
-        } else {
-          reflectionContent = `Common themes observed this week:\n${capitalized.map(t => `• ${t}`).join('\n')}`;
-        }
-        reflectionBadge = "Reflection Theme";
-      }
-
-      return {
-        pattern: {
-          badge: "Early Pattern",
-          content: `This week you completed ${totalMinutes} minutes across ${entries.length} ${sessionWord}. Your consistency suggests a healthy mindfulness routine and a growing wellness habit.`
-        },
-        recommendation: {
-          badge: "Gentle Suggestion",
-          content: "A gentle goal could be logging 2–3 sessions this week. This supports your emerging self-care habit."
-        },
-        stress: {
-          badge: "Early Pattern",
-          content: "Notice how your stress changes before and after each practice. Paying attention to these shifts supports body tension release."
-        },
-        sleep: {
-          badge: "Early Pattern",
-          content: "Notice how your daily energy changes after resting. Connecting sleep quality with daytime energy helps map your recovery rhythm."
-        },
-        reflection: {
-          badge: reflectionBadge,
-          content: reflectionContent,
-          prompt: "How did you feel right after your last session compared to before?"
-        },
-        focus: {
-          badge: "Gentle Suggestion",
-          content: "Try 2 short sessions this week. Select beginner yoga flows or quick breathing resets in the library."
-        }
-      };
-    }
-
-    // 1. Pattern Summary
-    const sessionWord = entries.length === 1 ? "session" : "sessions";
-    const patternContent = `This week you completed ${totalMinutes} minutes across ${entries.length} ${sessionWord}. Your consistency suggests a healthy mindfulness routine and a growing wellness habit.`;
-    let patternBadge = "Weekly Pattern";
-    if (entries.length >= 5) {
-      patternBadge = "Strong Signal";
-    }
-
-    // 2. Gentle Recommendation
-    const yogaCount = entries.filter(e => e.type === 'Yoga').length;
-    const medCount = entries.filter(e => e.type === 'Meditation').length;
-    const breathCount = entries.filter(e => e.type === 'Breathing').length;
-
-    let favoriteType = 'Yoga';
-    let maxCount = yogaCount;
-    let recContent = "Yoga appears to be your most consistent practice type this week. Continuing with gentle flows may support your daily balance.";
-
-    if (medCount > maxCount) {
-      favoriteType = 'Meditation';
-      maxCount = medCount;
-      recContent = "Meditation sequences appear to be your most consistent practice type this week. Continuing with seated pauses may support mental clarity.";
-    }
-    if (breathCount > maxCount) {
-      favoriteType = 'Breathing';
-      maxCount = breathCount;
-      recContent = "Breathing resets appear to be your most consistent practice type this week. Continuing with rhythmic breathing may support natural recovery.";
-    }
-
-    if (breathCount > 0 && favoriteType !== 'Breathing') {
-      recContent += " Additionally, incorporating short breathing resets during afternoon dips may support daily focus.";
-    }
-
-    // 3. Stress Trend Insight
-    let stressContent = "";
-    let stressBadge = "Early Pattern";
-    if (avgStressAfter < avgStressBefore) {
-      const stressReductionPercent = Math.round(((avgStressBefore - avgStressAfter) / avgStressBefore) * 100);
-      stressContent = `Your data suggests your sessions may be connected with lower stress after practice. On average, your logged tension decreases by ${stressReductionPercent}%.`;
-      stressBadge = "Strong Signal";
-    } else {
-      stressContent = "Observe how your stress changes before and after sessions. Paying attention to these shifts may support body tension awareness.";
-    }
-
-    // 4. Sleep & Energy Connection
-    let sleepContent = "";
-    let sleepBadge = "Early Pattern";
-    if (avgSleep >= 7.0) {
-      sleepContent = "Your sleep logs suggest a steady recovery rhythm this week. You may notice higher energy levels on days following deep rest.";
-      sleepBadge = "Strong Signal";
-    } else {
-      sleepContent = "Your sleep logs suggest your recovery rhythm has room to settle. Try aligning evening stretches or breathing resets to support quiet rest.";
-    }
-
-    // 5. Reflection Themes
-    const matchedThemes: string[] = [];
-    entries.forEach(e => {
-      if (e.reflection) {
-        const text = e.reflection.toLowerCase();
-        themesList.forEach(theme => {
-          if (text.includes(theme) && !matchedThemes.includes(theme)) {
-            matchedThemes.push(theme);
-          }
-        });
-      }
-    });
-
-    let reflectionContent = "";
-    let reflectionBadge = "Early Pattern";
-    if (matchedThemes.length > 0) {
-      const capitalized = matchedThemes.map(t => themeDisplayNames[t] || t);
-      if (capitalized.length === 1) {
-        reflectionContent = `Common theme observed this week:\n• ${capitalized[0]}`;
-      } else {
-        reflectionContent = `Common themes observed this week:\n${capitalized.map(t => `• ${t}`).join('\n')}`;
-      }
-      reflectionBadge = "Reflection Theme";
-    } else {
-      reflectionContent = "Continue logging reflections to discover recurring wellness themes.";
-    }
-
-    // 6. Next Week Focus
-    let focusContent = "A gentle goal could be incorporating 2 short sessions this week to establish your wellness rhythm.";
-    if (avgSleep < 6.0) {
-      focusContent = "Try an evening stretch or sleep meditation. Focus on quiet breathing before rest to support recovery.";
-    } else if (avgStressBefore >= 5.0 || avgStressAfter >= 5.0) {
-      focusContent = "Try one 5-minute breathing reset after a stressful day. Focus on slow, regular cycles to soothe physical tension.";
-    } else if (yogaCount >= 2) {
-      focusContent = "Continue with 3 gentle yoga sessions. Consistent movement supports posture alignment and mobility.";
-    }
-
-    return {
-      pattern: { badge: patternBadge, content: patternContent },
-      recommendation: { badge: "Gentle Suggestion", content: recContent },
-      stress: { badge: stressBadge, content: stressContent },
-      sleep: { badge: sleepBadge, content: sleepContent },
-      reflection: { badge: reflectionBadge, content: reflectionContent, prompt: "What does 'finding quiet' mean to you in the context of your daily routine?" },
-      focus: { badge: "Gentle Suggestion", content: focusContent }
-    };
-  };
-
-  const aiInsights = getDynamicAIInsights();
+  const aiInsights = getAIInsights(entries);
 
   return (
     <Layout currentTab={currentTab} setCurrentTab={setCurrentTab}>
       <div className="page-container">
         
+        {/* Offline Banner */}
+        {isBackendOffline && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '12px',
+            padding: '12px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            color: '#fca5a5',
+            fontSize: '0.9rem',
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.05)',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#ef4444',
+              boxShadow: '0 0 8px #ef4444'
+            }} />
+            <span>Backend connection unavailable. Using local demo data.</span>
+          </div>
+        )}
+
         {/* Success Toast */}
         {showToast && (
           <div style={{
@@ -958,9 +1145,7 @@ export default function App() {
                   <div style={{
                     height: '135px',
                     borderRadius: '12px',
-                    backgroundImage: `linear-gradient(to bottom, rgba(6, 10, 18, 0.15) 0%, rgba(6, 10, 18, 0.75) 100%), url(${wellnessYogaFlow})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center 20%',
+                    backgroundColor: '#0c111e',
                     marginBottom: '10px',
                     position: 'relative',
                     overflow: 'hidden',
@@ -969,6 +1154,30 @@ export default function App() {
                     alignItems: 'flex-end',
                     padding: '16px'
                   }}>
+                    {/* Dark gradient overlay for readability */}
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to bottom, rgba(6, 10, 18, 0.4) 0%, rgba(6, 10, 18, 0.9) 100%)',
+                      zIndex: 1
+                    }} />
+
+                    {/* Practice image with robust visual fallback */}
+                    <img 
+                      src={todayImgFailed ? wellnessYogaFlow : (RECOMMENDED_PRACTICE.imageUrl || wellnessYogaFlow)}
+                      onError={() => setTodayImgFailed(true)}
+                      alt=""
+                      loading="lazy"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        zIndex: 0
+                      }}
+                    />
+
                     <img 
                       src={circleLogo} 
                       alt="" 
@@ -979,7 +1188,8 @@ export default function App() {
                         width: '24px',
                         height: '24px',
                         opacity: 0.35,
-                        pointerEvents: 'none'
+                        pointerEvents: 'none',
+                        zIndex: 2
                       }} 
                     />
                     <div style={{
@@ -989,14 +1199,15 @@ export default function App() {
                       fontWeight: 600,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)'
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
+                      zIndex: 2
                     }}>
                       Mindful Breath & Flow
                     </div>
                   </div>
-
+ 
                   <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '4px', fontFamily: 'var(--font-headings)' }}>
-                    12 min Gentle Yoga Reset
+                    {RECOMMENDED_PRACTICE.title}
                   </h3>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4', maxWidth: '92%' }}>
                     Based on your recent logs showing mild body tension, we recommend this gentle session. It focuses on releasing shoulder tightness and inviting a calm balance.
@@ -1004,26 +1215,16 @@ export default function App() {
                   <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Clock size={14} />
-                      <span>12 Min</span>
+                      <span>{RECOMMENDED_PRACTICE.duration} Min</span>
                     </div>
                     <div>
-                      <span>Level: Beginner</span>
+                      <span>Level: {RECOMMENDED_PRACTICE.level}</span>
                     </div>
                   </div>
                 </div>
-
+ 
                 <button 
-                  onClick={() => handleOpenPracticeDetail({
-                    id: 'p_recommendation',
-                    title: '12 min Gentle Yoga Reset',
-                    type: 'Yoga',
-                    duration: 12,
-                    level: 'Beginner',
-                    goal: 'Release shoulder tightness and invite calm balance',
-                    description: 'A soothing sequence focused on neck rolls, chest openers, and gentle shoulder stretches. Designed to ease desktop fatigue and quiet active tension.',
-                    gradientClass: 'grad-yoga-1',
-                    benefits: ['Soothes desk posture fatigue', 'Encourages gentle movement', 'May support calm focus']
-                  })}
+                  onClick={() => handleOpenPracticeDetail(RECOMMENDED_PRACTICE)}
                   className="btn btn-primary" 
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
@@ -1156,9 +1357,16 @@ export default function App() {
                       padding: '10px 12px', 
                       borderRadius: '8px', 
                       backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                      borderLeft: '2px solid var(--color-lavender-light)'
+                      borderLeft: '2px solid var(--color-lavender-light)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '12px'
                     }}>
-                      "{ref}"
+                      <span style={{ fontStyle: 'italic' }}>"{ref.text}"</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                        {formatEntryDate(ref.createdAt, ref.date)}
+                      </span>
                     </div>
                   ))
                 ) : (
@@ -1472,8 +1680,9 @@ export default function App() {
                     title="AI Weekly Summary" 
                     badge="AI Synthesis"
                     type="pattern"
-                    content={aiInsights.pattern.content}
+                    content={backendInsights?.pattern_summary || aiInsights.pattern.content}
                     reflectionPrompt="How do you feel on mornings when you make time for a short flow compared to mornings when you don't?"
+
                     onReflectClick={() => {
                       setCurrentTab('today');
                       setTimeout(() => {
@@ -1577,134 +1786,257 @@ export default function App() {
           <div>
             <div style={{ textAlign: 'left', marginBottom: '24px' }}>
               <span className="badge badge-lavender" style={{ marginBottom: '8px' }}>Mindful Wellness Companion</span>
+              {backendInsights && (
+                <span className={`badge ${backendInsights.source === 'gemini' ? 'badge-teal' : 'badge-lavender'}`} style={{ marginBottom: '8px', marginLeft: '8px' }}>
+                  {backendInsights.source === 'gemini' ? 'Gemini AI' : 'Rule-based fallback'}
+                </span>
+              )}
               <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '6px' }}>Your Wellness Insights</h2>
               <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
                 Review patterns, trends and reflections from your wellness practice.
               </p>
             </div>
 
-            {entries.length === 0 ? (
-              /* Beautiful Empty State */
+            {isLoadingInsights ? (
               <div className="glass-panel" style={{
                 padding: '60px 24px',
                 textAlign: 'center',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '20px',
-                border: '1px dashed rgba(255, 255, 255, 0.1)',
                 marginTop: '12px'
               }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(167, 139, 250, 0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '8px',
-                  border: '1.5px solid rgba(167, 139, 250, 0.2)',
-                  boxShadow: '0 0 16px rgba(167, 139, 250, 0.15)'
-                }}>
-                  <img src={circleLogo} alt="BalanceFlow" style={{ width: '30px', height: '30px' }} />
-                </div>
-                <h3 style={{ fontSize: '1.4rem', color: '#fff', fontFamily: 'var(--font-headings)' }}>
-                  Your insights will grow with your practice.
-                </h3>
-                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', lineHeight: '1.5' }}>
-                  Log a few yoga, meditation or breathing sessions to discover patterns in your stress, energy, mood and sleep.
+                <style>{`
+                  @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                  }
+                `}</style>
+                <RefreshCw 
+                  size={36} 
+                  style={{ 
+                    color: 'var(--color-teal-light)', 
+                    animation: 'spin 2s linear infinite' 
+                  }} 
+                />
+                <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+                  Analyzing wellness logs and fetching AI insights...
                 </p>
-                <button onClick={() => handleOpenEntryModal()} className="btn btn-primary" style={{ marginTop: '8px' }}>
-                  <Plus size={16} />
-                  <span>Log First Practice</span>
-                </button>
               </div>
             ) : (
               <>
-                {/* Grid of Cards */}
-                <div className="app-grid app-grid-2">
-                  <InsightCard 
-                    title="Pattern Summary" 
-                    badge={aiInsights.pattern.badge}
-                    type="pattern"
-                    content={aiInsights.pattern.content}
-                  />
+                {insightsError && (
+                  <div style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '12px',
+                    padding: '12px 20px',
+                    marginBottom: '20px',
+                    color: '#fca5a5',
+                    fontSize: '0.9rem',
+                    textAlign: 'left'
+                  }}>
+                    {insightsError}
+                  </div>
+                )}
 
-                  <InsightCard 
-                    title="Gentle Recommendation" 
-                    badge={aiInsights.recommendation.badge}
-                    type="recommendation"
-                    content={aiInsights.recommendation.content}
-                  />
+                {backendInsights ? (
+                  <>
+                    {/* Grid of Cards */}
+                    <div className="app-grid app-grid-2">
+                      <InsightCard 
+                        title="Pattern Summary" 
+                        badge={aiInsights.pattern.badge}
+                        type="pattern"
+                        content={backendInsights.pattern_summary}
+                      />
 
-                  <InsightCard 
-                    title="Stress Trend Insight" 
-                    badge={aiInsights.stress.badge}
-                    type="connection"
-                    content={aiInsights.stress.content}
-                  />
+                      <InsightCard 
+                        title="Gentle Recommendation" 
+                        badge={aiInsights.recommendation.badge}
+                        type="recommendation"
+                        content={backendInsights.gentle_recommendation}
+                      />
 
-                  <InsightCard 
-                    title="Sleep & Energy Connection" 
-                    badge={aiInsights.sleep.badge}
-                    type="connection"
-                    content={aiInsights.sleep.content}
-                  />
+                      <InsightCard 
+                        title="Stress Trend Insight" 
+                        badge={aiInsights.stress.badge}
+                        type="connection"
+                        content={backendInsights.stress_trend_insight}
+                      />
 
-                  <InsightCard 
-                    title="Reflection Summary" 
-                    badge={aiInsights.reflection.badge}
-                    type="reflection"
-                    content={aiInsights.reflection.content}
-                    reflectionPrompt={aiInsights.reflection.prompt}
-                    onReflectClick={() => {
-                      setCurrentTab('today');
-                      setTimeout(() => {
-                        const el = document.querySelector('.reflection-input');
-                        if (el) (el as HTMLInputElement).focus();
-                      }, 150);
-                    }}
-                  />
+                      <InsightCard 
+                        title="Sleep & Energy Connection" 
+                        badge={aiInsights.sleep.badge}
+                        type="connection"
+                        content={backendInsights.sleep_energy_connection}
+                      />
 
-                  <InsightCard 
-                    title="Next Week Focus" 
-                    badge={aiInsights.focus.badge}
-                    type="recommendation"
-                    content={aiInsights.focus.content}
-                  />
-                </div>
+                      <InsightCard 
+                        title="Reflection Summary" 
+                        badge={aiInsights.reflection.badge}
+                        type="reflection"
+                        content={backendInsights.reflection_summary}
+                        reflectionPrompt={aiInsights.reflection.prompt}
+                        onReflectClick={() => {
+                          setCurrentTab('today');
+                          setTimeout(() => {
+                            const el = document.querySelector('.reflection-input');
+                            if (el) (el as HTMLInputElement).focus();
+                          }, 150);
+                        }}
+                      />
 
-                <div style={{ marginTop: '24px' }}>
-                  <InsightCard 
-                    title="How insights are generated"
-                    badge="Disclaimer"
-                    type="insight"
-                    content="Insights are generated from your logged wellness activities and reflections. They are designed to support personal awareness, habit tracking and self-reflection. They are not medical advice, diagnosis or treatment."
-                  />
-                </div>
+                      <InsightCard 
+                        title="Next Week Focus" 
+                        badge={aiInsights.focus.badge}
+                        type="recommendation"
+                        content={backendInsights.next_week_focus}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '24px' }}>
+                      <InsightCard 
+                        title="How insights are generated"
+                        badge="Disclaimer"
+                        type="insight"
+                        content={backendInsights.disclaimer}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  entries.length === 0 ? (
+                    /* Beautiful Empty State */
+                    <div className="glass-panel" style={{
+                      padding: '60px 24px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '20px',
+                      border: '1px dashed rgba(255, 255, 255, 0.1)',
+                      marginTop: '12px'
+                    }}>
+                      <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(167, 139, 250, 0.08)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '8px',
+                        border: '1.5px solid rgba(167, 139, 250, 0.2)',
+                        boxShadow: '0 0 16px rgba(167, 139, 250, 0.15)'
+                      }}>
+                        <img src={circleLogo} alt="BalanceFlow" style={{ width: '30px', height: '30px' }} />
+                      </div>
+                      <h3 style={{ fontSize: '1.4rem', color: '#fff', fontFamily: 'var(--font-headings)' }}>
+                        Your insights will grow with your practice.
+                      </h3>
+                      <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', lineHeight: '1.5' }}>
+                        Log a few yoga, meditation or breathing sessions to discover patterns in your stress, energy, mood and sleep.
+                      </p>
+                      <button onClick={() => handleOpenEntryModal()} className="btn btn-primary" style={{ marginTop: '8px' }}>
+                        <Plus size={16} />
+                        <span>Log First Practice</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Grid of Cards */}
+                      <div className="app-grid app-grid-2">
+                        <InsightCard 
+                          title="Pattern Summary" 
+                          badge={aiInsights.pattern.badge}
+                          type="pattern"
+                          content={aiInsights.pattern.content}
+                        />
+
+                        <InsightCard 
+                          title="Gentle Recommendation" 
+                          badge={aiInsights.recommendation.badge}
+                          type="recommendation"
+                          content={aiInsights.recommendation.content}
+                        />
+
+                        <InsightCard 
+                          title="Stress Trend Insight" 
+                          badge={aiInsights.stress.badge}
+                          type="connection"
+                          content={aiInsights.stress.content}
+                        />
+
+                        <InsightCard 
+                          title="Sleep & Energy Connection" 
+                          badge={aiInsights.sleep.badge}
+                          type="connection"
+                          content={aiInsights.sleep.content}
+                        />
+
+                        <InsightCard 
+                          title="Reflection Summary" 
+                          badge={aiInsights.reflection.badge}
+                          type="reflection"
+                          content={aiInsights.reflection.content}
+                          reflectionPrompt={aiInsights.reflection.prompt}
+                          onReflectClick={() => {
+                            setCurrentTab('today');
+                            setTimeout(() => {
+                              const el = document.querySelector('.reflection-input');
+                              if (el) (el as HTMLInputElement).focus();
+                            }, 150);
+                          }}
+                        />
+
+                        <InsightCard 
+                          title="Next Week Focus" 
+                          badge={aiInsights.focus.badge}
+                          type="recommendation"
+                          content={aiInsights.focus.content}
+                        />
+                      </div>
+
+                      <div style={{ marginTop: '24px' }}>
+                        <InsightCard 
+                          title="How insights are generated"
+                          badge="Disclaimer"
+                          type="insight"
+                          content="Insights are generated from your logged wellness activities and reflections. They are designed to support personal awareness, habit tracking and self-reflection. They are not medical advice, diagnosis or treatment."
+                        />
+                      </div>
+                    </>
+                  )
+                )}
               </>
             )}
           </div>
         )}
 
+
       </div>
 
       {/* Practice Detail & Active Guided Timer Modal */}
-      <PracticeDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        practice={selectedPracticeForDetail}
-        onCompleteAndLog={handleCompletePracticeAndLog}
-      />
+      {isDetailModalOpen && selectedPracticeForDetail && (
+        <PracticeDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          practice={selectedPracticeForDetail}
+          onCompleteAndLog={handleCompletePracticeAndLog}
+        />
+      )}
 
       {/* Wellness Entry Popup Dialog Modal */}
-      <EntryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveEntry}
-        prefilledValues={prefilledValues}
-      />
+      {isModalOpen && (
+        <EntryModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveEntry}
+          prefilledValues={prefilledValues}
+        />
+      )}
     </Layout>
   );
 }

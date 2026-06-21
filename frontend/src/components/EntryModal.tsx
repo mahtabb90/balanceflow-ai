@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { OptionGroup } from './OptionGroup';
 import { FormSlider } from './FormSlider';
 import type { WellnessEntry } from '../types/wellness';
@@ -18,56 +18,22 @@ export const EntryModal: React.FC<EntryModalProps> = ({
   prefilledValues,
 }) => {
   // Local Form State
-  const [type, setType] = useState<'Yoga' | 'Meditation' | 'Breathing'>('Yoga');
-  const [title, setTitle] = useState('');
-  const [duration, setDuration] = useState(15);
-  const [intensity, setIntensity] = useState<'Gentle' | 'Moderate' | 'Strong'>('Gentle');
+  const [type, setType] = useState<'Yoga' | 'Meditation' | 'Breathing'>(prefilledValues?.type || 'Yoga');
+  const [title, setTitle] = useState(prefilledValues?.title || '');
+  const [duration, setDuration] = useState(prefilledValues?.duration || 15);
+  const [intensity, setIntensity] = useState<'Gentle' | 'Moderate' | 'Strong'>(prefilledValues?.intensity || 'Gentle');
   
-  const [moodBefore, setMoodBefore] = useState<'Tired' | 'Calm' | 'Happy' | 'Stressed'>('Calm');
-  const [moodAfter, setMoodAfter] = useState<'Tired' | 'Calm' | 'Happy' | 'Stressed'>('Calm');
+  const [moodBefore, setMoodBefore] = useState<'Tired' | 'Calm' | 'Happy' | 'Stressed'>(prefilledValues?.moodBefore || 'Calm');
+  const [moodAfter, setMoodAfter] = useState<'Tired' | 'Calm' | 'Happy' | 'Stressed'>(prefilledValues?.moodAfter || 'Calm');
   
-  const [energyBefore, setEnergyBefore] = useState(5);
-  const [energyAfter, setEnergyAfter] = useState(6);
+  const [energyBefore, setEnergyBefore] = useState(prefilledValues?.energyBefore ?? 5);
+  const [energyAfter, setEnergyAfter] = useState(prefilledValues?.energyAfter ?? 6);
   
-  const [stressBefore, setStressBefore] = useState(5);
-  const [stressAfter, setStressAfter] = useState(3);
+  const [stressBefore, setStressBefore] = useState(prefilledValues?.stressBefore ?? 5);
+  const [stressAfter, setStressAfter] = useState(prefilledValues?.stressAfter ?? 3);
   
-  const [sleepQuality, setSleepQuality] = useState(7);
-  const [reflection, setReflection] = useState('');
-
-  // Handle Prefills
-  useEffect(() => {
-    if (isOpen) {
-      if (prefilledValues) {
-        setType(prefilledValues.type || 'Yoga');
-        setTitle(prefilledValues.title || '');
-        setDuration(prefilledValues.duration || 15);
-        setIntensity(prefilledValues.intensity || 'Gentle');
-        setMoodBefore(prefilledValues.moodBefore || 'Calm');
-        setMoodAfter(prefilledValues.moodAfter || 'Calm');
-        setEnergyBefore(prefilledValues.energyBefore || 6);
-        setEnergyAfter(prefilledValues.energyAfter || 7);
-        setStressBefore(prefilledValues.stressBefore || 5);
-        setStressAfter(prefilledValues.stressAfter || 3);
-        setSleepQuality(prefilledValues.sleepQuality || 7);
-        setReflection(prefilledValues.reflection || '');
-      } else {
-        // Reset to Defaults
-        setType('Yoga');
-        setTitle('');
-        setDuration(15);
-        setIntensity('Gentle');
-        setMoodBefore('Calm');
-        setMoodAfter('Calm');
-        setEnergyBefore(5);
-        setEnergyAfter(6);
-        setStressBefore(5);
-        setStressAfter(3);
-        setSleepQuality(7);
-        setReflection('');
-      }
-    }
-  }, [isOpen, prefilledValues]);
+  const [sleepQuality, setSleepQuality] = useState(prefilledValues?.sleepQuality ?? 7);
+  const [reflection, setReflection] = useState(prefilledValues?.reflection || '');
 
   if (!isOpen) return null;
 

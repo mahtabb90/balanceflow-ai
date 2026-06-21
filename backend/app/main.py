@@ -1,5 +1,7 @@
 """Main entrypoint for the BalanceFlow FastAPI backend."""
 
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
@@ -21,10 +23,23 @@ app.include_router(stats.router, prefix="/api/stats", tags=["Stats"])
 app.include_router(reports.router, prefix="/api/reports", tags=["Reports"])
 app.include_router(ai.router, prefix="/api/ai", tags=["AI Insights"])
 
+# Load environment variables
+load_dotenv()
+
 # Enable CORS so frontend (React/Vite) can communicate with the backend
+cors_origins_env = os.getenv("CORS_ORIGINS")
+if cors_origins_env:
+    origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+    # Ensure local development is always supported
+    for local_origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+        if local_origin not in origins:
+            origins.append(local_origin)
+else:
+    origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify the actual origins
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

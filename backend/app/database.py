@@ -8,13 +8,26 @@ from dotenv import load_dotenv
 # Load environment variables from .env if it exists
 load_dotenv()
 
-# SQLite database URL (defaulting to local sqlite file in backend folder)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./balanceflow.db")
+# Read DATABASE_URL from environment variable
+database_url = os.getenv("DATABASE_URL")
 
-# Create engine. Connect args are needed only for SQLite to allow multiple threads.
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+if database_url:
+    # Support connection strings starting with postgres:// as SQLAlchemy requires postgresql://
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+else:
+    # Fall back to local SQLite
+    database_url = "sqlite:///./balanceflow.db"
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+# Engine configuration depending on database type
+if database_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+    engine_kwargs = {}
+else:
+    connect_args = {}
+    engine_kwargs = {"pool_pre_ping": True}
+
+engine = create_engine(database_url, connect_args=connect_args, **engine_kwargs)
 
 # Create SessionLocal class for database sessions
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

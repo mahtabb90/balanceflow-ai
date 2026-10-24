@@ -915,3 +915,31 @@ a:hover {
   }
 }
 
+
+/* Quick Reflection delete control: subtle, with a 44px touch target */
+.reflection-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px -4px -8px 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+.reflection-delete-btn:hover {
+  color: var(--color-rose-soft);
+  background-color: rgba(244, 63, 94, 0.1);
+  opacity: 1;
+}
+.reflection-delete-btn:focus-visible {
+  outline: 2px solid var(--color-teal-light);
+  outline-offset: 2px;
+  opacity: 1;
+}

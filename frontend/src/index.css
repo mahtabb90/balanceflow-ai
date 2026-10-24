@@ -612,6 +612,8 @@ a:hover {
   }
   .hero-logo-img {
     width: 120px;
+    height: auto;
+    aspect-ratio: 1 / 1;
   }
   .hero-waves-svg {
     width: 220px;
@@ -640,6 +642,8 @@ a:hover {
   }
   .hero-logo-img {
     width: 150px;
+    height: auto;
+    aspect-ratio: 1 / 1;
   }
   .hero-waves-svg {
     width: 260px;
@@ -809,6 +813,86 @@ a:hover {
     align-items: center;
     text-align: center;
     gap: 24px;
+  }
+}
+
+/* Today hero - compact phone layout (inline styles on the hero need !important) */
+@media (max-width: 640px) {
+  .today-hero {
+    padding: 20px 16px 20px !important;
+    min-height: 0 !important;
+    margin-bottom: 16px !important;
+  }
+  .today-hero-content-wrapper {
+    gap: 14px;
+  }
+  .today-hero .yoga-illustration {
+    order: -1;
+    margin: 0 auto;
+    width: 150px;
+    height: 150px;
+  }
+  .today-hero .yoga-sun,
+  .today-hero .yoga-ring-1 {
+    width: 130px;
+    height: 130px;
+  }
+  .today-hero .yoga-ring-2 {
+    width: 150px;
+    height: 150px;
+  }
+  .today-hero .hero-logo-img {
+    width: 104px;
+    max-width: 100%;
+  }
+  .today-hero .hero-logo-reflection {
+    transform: scaleY(-0.7) translateY(54px) scale(0.95) !important;
+  }
+  .today-hero-text {
+    max-width: 100% !important;
+  }
+  .today-hero-heading {
+    align-items: center;
+    margin-bottom: 10px !important;
+  }
+  .today-hero-badge {
+    align-self: center !important;
+  }
+  .today-hero-title {
+    font-size: 1.75rem !important;
+    line-height: 1.2 !important;
+  }
+  .today-hero-divider {
+    align-self: center;
+  }
+  .today-hero-quote {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+    margin: 0 auto 8px !important;
+    max-width: 34ch !important;
+    text-wrap: balance;
+  }
+  .today-hero-subtitle {
+    margin-bottom: 16px !important;
+  }
+  .today-hero-actions {
+    flex-direction: column;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+  }
+  .today-hero-actions .btn {
+    width: 100%;
+    min-height: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yoga-sun,
+  .yoga-ring,
+  .hero-logo-img,
+  .bg-flow-wave,
+  .glow-particle {
+    animation: none !important;
   }
 }
 

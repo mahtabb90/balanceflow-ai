@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
+from app.core.access import require_destructive_access
 from app.database import get_db
 from app.models import WellnessEntry
 from app.schemas import WellnessEntryCreate, WellnessEntryResponse
@@ -48,9 +49,9 @@ def delete_entry(entry_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": f"Wellness entry with ID {entry_id} has been successfully deleted"}
 
-@router.delete("", status_code=status.HTTP_200_OK)
+@router.delete("", status_code=status.HTTP_200_OK, dependencies=[Depends(require_destructive_access)])
 def delete_all_entries(db: Session = Depends(get_db)):
-    """Delete all wellness entries (Demo reset)."""
+    """Delete all wellness entries. Never available in production."""
     num_deleted = db.query(WellnessEntry).delete()
     db.commit()
     return {"message": f"All wellness entries have been successfully deleted. Total deleted: {num_deleted}"}

@@ -1,4 +1,4 @@
-import type { WellnessEntry, BackendWellnessEntry, AIInsightsResponse } from '../types/wellness';
+import type { WellnessEntry, Reflection, AIInsightsResponse } from '../types/wellness';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
@@ -44,104 +44,68 @@ export function formatEntryDate(createdAt?: string, fallbackDate?: string): stri
   });
 }
 
-// Convert backend snake_case model to frontend camelCase type
-export function mapBackendToFrontend(entry: BackendWellnessEntry): WellnessEntry {
-  const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const createdDate = parseUTCDateTime(entry.created_at);
-  
-  // Calculate local date (YYYY-MM-DD) and day in browser local timezone
-  const year = createdDate.getFullYear();
-  const month = String(createdDate.getMonth() + 1).padStart(2, '0');
-  const day = String(createdDate.getDate()).padStart(2, '0');
-  const dateStr = `${year}-${month}-${day}`;
-  const dayStr = daysShort[createdDate.getDay()] || 'Mon';
+export interface DemoInsightsPayload {
+  entries: Record<string, string | number | null>[];
+  reflections: string[];
+  include_reflections: boolean;
+}
 
+function entryTimestamp(entry: WellnessEntry): string {
+  if (entry.created_at) return entry.created_at;
+  const [y, m, d] = entry.date.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12).toISOString();
+}
+
+/**
+ * Build the request body for the stateless insights endpoint from this visitor's local data.
+ * Free-text reflections are only included when the visitor has explicitly opted in.
+ */
+export function buildDemoInsightsPayload(
+  entries: WellnessEntry[],
+  reflections: Reflection[],
+  includeReflections: boolean,
+): DemoInsightsPayload {
   return {
-    id: String(entry.id),
-    date: dateStr,
-    day: dayStr,
-    type: entry.practice_type as 'Yoga' | 'Meditation' | 'Breathing',
-    title: entry.practice_title,
-    duration: entry.duration_minutes,
-    intensity: entry.intensity as 'Gentle' | 'Moderate' | 'Strong',
-    moodBefore: entry.mood_before as 'Tired' | 'Calm' | 'Happy' | 'Stressed',
-    moodAfter: entry.mood_after as 'Tired' | 'Calm' | 'Happy' | 'Stressed',
-    energyBefore: entry.energy_before,
-    energyAfter: entry.energy_after,
-    stressBefore: entry.stress_before,
-    stressAfter: entry.stress_after,
-    sleepQuality: entry.sleep_quality,
-    reflection: entry.reflection || '',
-    created_at: entry.created_at,
+    entries: entries.slice(-100).map(entry => ({
+      practice_type: entry.type,
+      practice_title: entry.title.slice(0, 80),
+      duration_minutes: entry.duration,
+      intensity: entry.intensity,
+      mood_before: entry.moodBefore,
+      mood_after: entry.moodAfter,
+      energy_before: entry.energyBefore,
+      energy_after: entry.energyAfter,
+      stress_before: entry.stressBefore,
+      stress_after: entry.stressAfter,
+      sleep_quality: entry.sleepQuality,
+      reflection: includeReflections && entry.reflection ? entry.reflection.slice(0, 500) : null,
+      created_at: entryTimestamp(entry),
+    })),
+    reflections: includeReflections ? reflections.slice(0, 20).map(r => r.text.slice(0, 500)) : [],
+    include_reflections: includeReflections,
   };
 }
 
-// Convert frontend camelCase log (without id, date, day) to backend snake_case model
-export function mapFrontendToBackend(entry: Omit<WellnessEntry, 'id' | 'date' | 'day'>): Omit<BackendWellnessEntry, 'id' | 'created_at'> {
-  return {
-    practice_type: entry.type,
-    practice_title: entry.title,
-    duration_minutes: entry.duration,
-    intensity: entry.intensity,
-    mood_before: entry.moodBefore,
-    mood_after: entry.moodAfter,
-    energy_before: entry.energyBefore,
-    energy_after: entry.energyAfter,
-    stress_before: entry.stressBefore,
-    stress_after: entry.stressAfter,
-    sleep_quality: entry.sleepQuality,
-    reflection: entry.reflection || undefined,
-  };
-}
-
-export async function getEntries(): Promise<WellnessEntry[]> {
-  const response = await fetch(`${API_BASE_URL}/api/entries`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch entries: ${response.statusText}`);
-  }
-  const data: BackendWellnessEntry[] = await response.json();
-  return data.map(mapBackendToFrontend);
-}
-
-export async function createEntry(entry: Omit<WellnessEntry, 'id' | 'date' | 'day'>): Promise<WellnessEntry> {
-  const backendData = mapFrontendToBackend(entry);
-  const response = await fetch(`${API_BASE_URL}/api/entries`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(backendData),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to create entry: ${response.statusText}`);
-  }
-  const data: BackendWellnessEntry = await response.json();
-  return mapBackendToFrontend(data);
-}
-
-export async function deleteEntry(id: string | number): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/entries/${id}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to delete entry: ${response.statusText}`);
+/** Ask the backend for insights from this visitor's local data. Nothing is stored server-side. */
+export async function getDemoInsights(
+  entries: WellnessEntry[],
+  reflections: Reflection[],
+  includeReflections: boolean,
+): Promise<AIInsightsResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/demo/insights`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildDemoInsightsPayload(entries, reflections, includeReflections)),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch AI insights: ${response.status}`);
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
   }
 }
-
-export async function deleteAllEntries(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/entries`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to delete all entries: ${response.statusText}`);
-  }
-}
-
-export async function getAIInsights(): Promise<AIInsightsResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/ai/insights`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch AI insights: ${response.statusText}`);
-  }
-  return await response.json();
-}
-

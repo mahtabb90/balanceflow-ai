@@ -1,13 +1,17 @@
 """Service module for invoking Gemini AI to get insights, with a safe rule-based fallback."""
 
 import json
-from typing import List, Dict, Any
+import logging
+from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
 
 from app.core import config
 from app.models import WellnessEntry
 from app.services import stats_service, prompt_service
+
+# Never log entries, reflections, prompts or keys here: only counts and error types.
+logger = logging.getLogger("balanceflow.ai")
 
 def extract_json_object(s: str) -> str:
     """Extract a JSON object from text by finding the first '{' and last '}'."""
@@ -17,7 +21,13 @@ def extract_json_object(s: str) -> str:
         return s[start:end+1]
     return s
 
-def generate_fallback_insights(entries: List[WellnessEntry], stats: Dict[str, Any], report: Dict[str, Any]) -> Dict[str, Any]:
+def generate_fallback_insights(
+    entries: List[WellnessEntry],
+    stats: Dict[str, Any],
+    report: Dict[str, Any],
+    include_reflections: bool = True,
+    extra_reflections: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """Generate safe, sample-size-aware, rule-based fallback wellness insights."""
     count = len(entries)
     best_practice = report.get("best_practice_type", "None")
@@ -95,8 +105,12 @@ def generate_fallback_insights(entries: List[WellnessEntry], stats: Dict[str, An
 
     # 5. Reflection Summary
     # Check non-empty reflections
-    reflections = [e.reflection.strip() for e in entries if e.reflection and e.reflection.strip()]
-    if not reflections:
+    reflections = [e.reflection.strip() for e in entries if e.reflection and e.reflection.strip()] if include_reflections else []
+    if include_reflections and extra_reflections:
+        reflections += [r.strip() for r in extra_reflections if r and r.strip()]
+    if not include_reflections:
+        reflection_summary = "Reflection text was not included in this analysis. You can choose to include your notes to see recurring themes."
+    elif not reflections:
         reflection_summary = "Add short reflections when logging to discover recurring themes and mindfulness thoughts."
     elif len(reflections) == 1:
         ref_text = reflections[0]
@@ -120,21 +134,29 @@ def generate_fallback_insights(entries: List[WellnessEntry], stats: Dict[str, An
     }
 
 
-def generate_ai_insights(entries: List[WellnessEntry]) -> Dict[str, Any]:
+def generate_ai_insights(
+    entries: List[WellnessEntry],
+    include_reflections: bool = True,
+    extra_reflections: Optional[List[str]] = None,
+    use_gemini: bool = True,
+) -> Dict[str, Any]:
     """Generate wellness insights. Calls Gemini if key is present; falls back to rule-based logic if missing or errors occur."""
     stats = stats_service.build_dashboard_stats(entries)
     report = stats_service.build_weekly_report(entries)
     
-    if not config.GEMINI_API_KEY:
-        print("Using fallback AI insights")
-        return generate_fallback_insights(entries, stats, report)
+    if not config.GEMINI_API_KEY or not use_gemini:
+        logger.info("Using fallback AI insights")
+        return generate_fallback_insights(entries, stats, report, include_reflections, extra_reflections)
         
     try:
         # Build prompt using prompt_service
-        prompt = prompt_service.build_insights_prompt(entries, stats, report)
+        prompt = prompt_service.build_insights_prompt(entries, stats, report, include_reflections, extra_reflections)
         
         # Initialize Gemini Client and call
-        client = genai.Client(api_key=config.GEMINI_API_KEY)
+        client = genai.Client(
+            api_key=config.GEMINI_API_KEY,
+            http_options=types.HttpOptions(timeout=config.GEMINI_TIMEOUT_SECONDS * 1000),
+        )
         
         response = client.models.generate_content(
             model=config.GEMINI_MODEL,
@@ -164,16 +186,16 @@ def generate_ai_insights(entries: List[WellnessEntry]) -> Dict[str, Any]:
         ]
         
         for key in required_keys:
-            if key not in data:
+            if not isinstance(data.get(key), str):
                 data[key] = "Insight unavailable."
                 
         # Set source to gemini
         data["source"] = "gemini"
         
-        print("Using Gemini AI insights")
+        logger.info("Using Gemini AI insights")
         return data
         
     except Exception as e:
-        print(f"Error calling Gemini or parsing response: {e}")
-        print("Using fallback AI insights")
-        return generate_fallback_insights(entries, stats, report)
+        # Only the error type is logged: messages can echo request details.
+        logger.warning("Gemini call failed (%s); using fallback AI insights", type(e).__name__)
+        return generate_fallback_insights(entries, stats, report, include_reflections, extra_reflections)

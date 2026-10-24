@@ -1,8 +1,8 @@
 """Pydantic schemas for data validation and serialization."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from datetime import datetime
-from typing import Optional
+from typing import List, Literal, Optional
 
 class WellnessEntryBase(BaseModel):
     """Base schema with common wellness entry fields."""
@@ -88,3 +88,45 @@ class AIInsightsResponse(BaseModel):
     next_week_focus: str
     disclaimer: str
 
+
+
+# --- Stateless demo insights (visitor-supplied data, never persisted) ---
+
+PracticeType = Literal["Yoga", "Meditation", "Breathing"]
+IntensityLevel = Literal["Gentle", "Moderate", "Strong"]
+MoodLevel = Literal["Tired", "Calm", "Happy", "Stressed"]
+
+class DemoEntry(BaseModel):
+    """One visitor-supplied wellness entry. Strictly validated; never stored."""
+    model_config = ConfigDict(extra="forbid")
+
+    practice_type: PracticeType
+    practice_title: str = Field(..., min_length=1, max_length=80)
+    duration_minutes: int = Field(..., ge=1, le=600)
+    intensity: IntensityLevel
+    mood_before: MoodLevel
+    mood_after: MoodLevel
+    energy_before: int = Field(..., ge=1, le=10)
+    energy_after: int = Field(..., ge=1, le=10)
+    stress_before: int = Field(..., ge=1, le=10)
+    stress_after: int = Field(..., ge=1, le=10)
+    sleep_quality: int = Field(..., ge=1, le=10)
+    reflection: Optional[str] = Field(None, max_length=500)
+    created_at: datetime
+
+class DemoInsightsRequest(BaseModel):
+    """Payload for the stateless demo insights endpoint."""
+    model_config = ConfigDict(extra="forbid")
+
+    entries: List[DemoEntry] = Field(default_factory=list, max_length=100)
+    reflections: List[str] = Field(default_factory=list, max_length=20)
+    # Free text is only analysed when the visitor explicitly opts in.
+    include_reflections: bool = False
+
+    @field_validator("reflections")
+    @classmethod
+    def _limit_reflection_length(cls, value: List[str]) -> List[str]:
+        for item in value:
+            if len(item) > 500:
+                raise ValueError("Each reflection must be at most 500 characters.")
+        return value

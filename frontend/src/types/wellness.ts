@@ -15,6 +15,15 @@ export interface WellnessEntry {
   sleepQuality: number; // 1-10
   reflection: string;
   created_at?: string;
+  /** True for example entries the visitor explicitly loaded; never set on entries they logged. */
+  isSample?: boolean;
+}
+
+/** A standalone Quick Reflection note. Kept separate from practice sessions. */
+export interface Reflection {
+  id: string;
+  text: string;
+  createdAt: string; // ISO timestamp
 }
 
 export interface BackendWellnessEntry {

@@ -16,7 +16,6 @@ def get_ai_insights(db: Session = Depends(get_db)):
     entries = db.query(WellnessEntry).order_by(WellnessEntry.created_at.desc()).all()
     
     if not entries:
-        print("Using fallback AI insights")
         return {
             "source": "fallback",
             "pattern_summary": "Your insights will grow with your practice.",

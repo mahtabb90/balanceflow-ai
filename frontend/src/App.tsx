@@ -12,8 +12,14 @@ import { getAIInsights, getWellnessMetrics } from './services/aiInsightService';
 import { BreathingCircle } from './components/BreathingCircle';
 import { EntryModal } from './components/EntryModal';
 import { PracticeDetailModal } from './components/PracticeDetailModal';
-import type { WellnessEntry, AIInsightsResponse } from './types/wellness';
-import { getEntries, createEntry, deleteAllEntries, formatEntryDate, getAIInsights as getAIInsightsApi } from './services/apiService';
+import { QuickReflection } from './components/QuickReflection';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import type { WellnessEntry, Reflection, AIInsightsResponse } from './types/wellness';
+import { getDemoInsights } from './services/apiService';
+import {
+  loadEntries, saveEntries, loadReflections, saveReflections, loadPrefs, savePrefs, newId, localDateParts, MAX_REFLECTION_LENGTH
+} from './services/localStore';
+import { buildSampleEntries } from './data/sampleEntries';
 import { 
   BarChart, 
   Bar, 
@@ -32,150 +38,9 @@ import {
   Clock, 
   Activity,
   Plus,
-  Send,
-  MessageSquare,
   Trash2,
   RefreshCw
 } from 'lucide-react';
-
-const INITIAL_ENTRIES: WellnessEntry[] = [
-  {
-    id: 'e1',
-    date: '2026-06-08',
-    day: 'Mon',
-    type: 'Yoga',
-    title: 'Morning Yoga Flow',
-    duration: 15,
-    intensity: 'Gentle',
-    moodBefore: 'Tired',
-    moodAfter: 'Calm',
-    energyBefore: 5,
-    energyAfter: 7,
-    stressBefore: 6,
-    stressAfter: 4,
-    sleepQuality: 7,
-    reflection: 'Felt a bit stiff at first, but shoulder openers were very refreshing.'
-  },
-  {
-    id: 'e2',
-    date: '2026-06-09',
-    day: 'Tue',
-    type: 'Yoga',
-    title: 'Stress Relief Yoga',
-    duration: 20,
-    intensity: 'Moderate',
-    moodBefore: 'Stressed',
-    moodAfter: 'Calm',
-    energyBefore: 4,
-    energyAfter: 7,
-    stressBefore: 7,
-    stressAfter: 3,
-    sleepQuality: 6,
-    reflection: 'Really released muscle tightness in lower back.'
-  },
-  {
-    id: 'e3',
-    date: '2026-06-10',
-    day: 'Wed',
-    type: 'Breathing',
-    title: '5-Minute Breathing Reset',
-    duration: 5,
-    intensity: 'Gentle',
-    moodBefore: 'Tired',
-    moodAfter: 'Calm',
-    energyBefore: 5,
-    energyAfter: 6,
-    stressBefore: 5,
-    stressAfter: 3,
-    sleepQuality: 8,
-    reflection: 'Quick break during work did wonders for focus.'
-  },
-  {
-    id: 'e4',
-    date: '2026-06-11',
-    day: 'Thu',
-    type: 'Yoga',
-    title: 'Morning Yoga Flow',
-    duration: 15,
-    intensity: 'Gentle',
-    moodBefore: 'Tired',
-    moodAfter: 'Happy',
-    energyBefore: 6,
-    energyAfter: 8,
-    stressBefore: 6,
-    stressAfter: 4,
-    sleepQuality: 8,
-    reflection: 'Grateful for some morning movements.'
-  },
-  {
-    id: 'e5',
-    date: '2026-06-11',
-    day: 'Thu',
-    type: 'Meditation',
-    title: 'Sleep Meditation',
-    duration: 15,
-    intensity: 'Gentle',
-    moodBefore: 'Calm',
-    moodAfter: 'Calm',
-    energyBefore: 4,
-    energyAfter: 3,
-    stressBefore: 4,
-    stressAfter: 2,
-    sleepQuality: 8,
-    reflection: 'Unwound nicely before turning off the lights.'
-  },
-  {
-    id: 'e6',
-    date: '2026-06-12',
-    day: 'Fri',
-    type: 'Yoga',
-    title: 'Neck & Shoulder Release',
-    duration: 12,
-    intensity: 'Gentle',
-    moodBefore: 'Stressed',
-    moodAfter: 'Calm',
-    energyBefore: 6,
-    energyAfter: 7,
-    stressBefore: 6,
-    stressAfter: 3,
-    sleepQuality: 7,
-    reflection: 'Neck tightness cleared after computer work.'
-  },
-  {
-    id: 'e7',
-    date: '2026-06-13',
-    day: 'Sat',
-    type: 'Yoga',
-    title: 'Morning Yoga Flow',
-    duration: 15,
-    intensity: 'Moderate',
-    moodBefore: 'Calm',
-    moodAfter: 'Happy',
-    energyBefore: 7,
-    energyAfter: 9,
-    stressBefore: 4,
-    stressAfter: 2,
-    sleepQuality: 9,
-    reflection: 'Strong flow, felt energizing and active.'
-  },
-  {
-    id: 'e8',
-    date: '2026-06-13',
-    day: 'Sat',
-    type: 'Meditation',
-    title: 'Sleep Meditation',
-    duration: 15,
-    intensity: 'Gentle',
-    moodBefore: 'Tired',
-    moodAfter: 'Calm',
-    energyBefore: 4,
-    energyAfter: 3,
-    stressBefore: 4,
-    stressAfter: 2,
-    sleepQuality: 9,
-    reflection: 'Deep rest, quietly reflections.'
-  }
-];
 
 const RECOMMENDED_PRACTICE: Practice = {
   id: 'p_recommendation',
@@ -231,55 +96,39 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<string>('today');
   const [todayImgFailed, setTodayImgFailed] = useState(false);
   
-  // Entries Database State
-  const [entries, setEntries] = useState<WellnessEntry[]>(INITIAL_ENTRIES);
-  const [isBackendOffline, setIsBackendOffline] = useState<boolean>(false);
+  // Visitor-local demo data (this browser only; nothing is read from or written to a shared database)
+  const [entries, setEntries] = useState<WellnessEntry[]>(loadEntries);
+  const [reflections, setReflections] = useState<Reflection[]>(loadReflections);
+  const [includeReflectionsInAI, setIncludeReflectionsInAI] = useState<boolean>(() => loadPrefs().includeReflectionsInAI);
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
 
   // AI Insights State
   const [backendInsights, setBackendInsights] = useState<AIInsightsResponse | null>(null);
   const [isLoadingInsights, setIsLoadingInsights] = useState<boolean>(false);
   const [insightsError, setInsightsError] = useState<string | null>(null);
 
-
-  // Load entries on mount
+  // Fetch AI insights for this visitor's own data when opening the insights tab or when the data changes
   useEffect(() => {
-    const fetchEntries = async () => {
-      try {
-        const data = await getEntries();
-        setEntries(data);
-        setIsBackendOffline(false);
-      } catch (error) {
-        console.error("Failed to fetch entries from backend, falling back to local demo data:", error);
-        setIsBackendOffline(true);
-      }
-    };
-    fetchEntries();
-  }, []);
-
-  // Fetch backend AI insights when switching to the insights tab or when entry count changes
-  useEffect(() => {
-    const fetchBackendInsights = async () => {
+    if (currentTab !== 'insights') return;
+    let cancelled = false;
+    const fetchInsights = async () => {
       setIsLoadingInsights(true);
       setInsightsError(null);
       try {
-        const data = await getAIInsightsApi();
-        setBackendInsights(data);
-      } catch (error) {
-        console.error("Failed to load backend insights:", error);
-        setInsightsError("AI insights are temporarily unavailable. Your local wellness patterns are still available.");
+        const data = await getDemoInsights(entries, reflections, includeReflectionsInAI);
+        if (!cancelled) setBackendInsights(data);
+      } catch {
+        if (!cancelled) {
+          setBackendInsights(null);
+          setInsightsError("AI insights are temporarily unavailable. Your local wellness patterns are still available.");
+        }
       } finally {
-        setIsLoadingInsights(false);
+        if (!cancelled) setIsLoadingInsights(false);
       }
     };
-
-    if (currentTab === 'insights') {
-      fetchBackendInsights();
-    }
-  }, [currentTab, entries.length]);
-
-
-  // Quick reflection text box input
-  const [newReflectionText, setNewReflectionText] = useState<string>('');
+    fetchInsights();
+    return () => { cancelled = true; };
+  }, [currentTab, entries, reflections, includeReflectionsInAI]);
 
   // Modal Control States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -330,31 +179,31 @@ export default function App() {
     setIsModalOpen(true);
   };
 
-  // Save wellness entry log
-  const handleSaveEntry = async (newLog: Omit<WellnessEntry, 'id' | 'date' | 'day'>) => {
+  // Persist helpers: update state, then save to this browser. Saving can fail (storage blocked or full).
+  const commitEntries = (next: WellnessEntry[]) => {
+    setEntries(next);
+    if (!saveEntries(next)) triggerToast("Couldn’t save to this browser’s storage. Changes will be lost when you close the page.");
+  };
+
+  const commitReflections = (next: Reflection[]): boolean => {
+    const saved = saveReflections(next);
+    if (saved) setReflections(next);
+    return saved;
+  };
+
+  // Save wellness entry log (stored in this browser only)
+  const handleSaveEntry = (newLog: Omit<WellnessEntry, 'id' | 'date' | 'day'>) => {
     setIsModalOpen(false);
-    try {
-      const savedEntry = await createEntry(newLog);
-      setEntries(prev => [...prev, savedEntry]);
-      setIsBackendOffline(false);
-      triggerToast("Session logged. Your dashboard has been updated.");
-    } catch (error) {
-      console.error("Failed to save entry to backend, falling back to local storage:", error);
-      setIsBackendOffline(true);
-      
-      // Fallback behavior
-      const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const now = new Date();
-      const fallbackEntry: WellnessEntry = {
-        ...newLog,
-        id: 'e_' + Math.random().toString(36).substr(2, 9),
-        date: now.toISOString().split('T')[0],
-        day: daysShort[now.getDay()],
-      };
-      setEntries(prev => [...prev, fallbackEntry]);
-      triggerToast("Backend connection unavailable. Session saved locally.");
-    }
-    
+    const now = new Date();
+    const entry: WellnessEntry = {
+      ...newLog,
+      id: newId('e'),
+      ...localDateParts(now),
+      created_at: now.toISOString(),
+    };
+    commitEntries([...entries, entry]);
+    triggerToast("Session logged. Your dashboard has been updated.");
+
     // Automatically direct to Dashboard to see updates
     setCurrentTab('dashboard');
   };
@@ -376,91 +225,49 @@ export default function App() {
     });
   };
 
-  // Submit quick reflection from Today page text area
-  const handleSaveReflection = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newReflectionText.trim()) {
-      const logData: Omit<WellnessEntry, 'id' | 'date' | 'day'> = {
-        type: 'Meditation',
-        title: 'Mindful Reflection',
-        duration: 5,
-        intensity: 'Gentle',
-        moodBefore: 'Calm',
-        moodAfter: 'Calm',
-        energyBefore: 5,
-        energyAfter: 6,
-        stressBefore: 3,
-        stressAfter: 3,
-        sleepQuality: 7,
-        reflection: newReflectionText.trim()
-      };
-
-      setNewReflectionText('');
-
-      try {
-        const savedEntry = await createEntry(logData);
-        setEntries(prev => [...prev, savedEntry]);
-        setIsBackendOffline(false);
-        triggerToast("Reflection logged. Entry added to your history.");
-      } catch (error) {
-        console.error("Failed to save reflection to backend, falling back to local storage:", error);
-        setIsBackendOffline(true);
-        
-        // Fallback behavior
-        const now = new Date();
-        const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const fallbackEntry: WellnessEntry = {
-          ...logData,
-          id: 'e_' + Math.random().toString(36).substr(2, 9),
-          date: now.toISOString().split('T')[0],
-          day: daysShort[now.getDay()],
-        };
-        setEntries(prev => [...prev, fallbackEntry]);
-        triggerToast("Backend connection unavailable. Reflection saved locally.");
-      }
+  // Quick Reflections are stored separately from practice sessions
+  const handleAddReflection = (text: string) => {
+    const reflection: Reflection = {
+      id: newId('r'),
+      text: text.slice(0, MAX_REFLECTION_LENGTH),
+      createdAt: new Date().toISOString(),
+    };
+    if (commitReflections([...reflections, reflection])) {
+      triggerToast("Reflection saved in this browser.");
+    } else {
+      setReflections(prev => [...prev, reflection]);
+      triggerToast("Couldn’t save to this browser’s storage. Changes will be lost when you close the page.");
     }
   };
 
-  // Clear database logs (to test empty states)
-  const handleClearLogs = async () => {
-    try {
-      await deleteAllEntries();
-      setEntries([]);
-      setIsBackendOffline(false);
-      triggerToast("All history cleared. Viewing empty states.");
-    } catch (error) {
-      console.error("Failed to clear entries on backend:", error);
-      setIsBackendOffline(true);
-      
-      // Fallback
-      setEntries([]);
-      triggerToast("Backend connection unavailable. Cleared local view.");
-    }
+  // Deletes exactly one reflection; practice sessions are never touched
+  const handleDeleteReflection = (id: string): boolean => {
+    const saved = commitReflections(reflections.filter(r => r.id !== id));
+    if (saved) triggerToast("Reflection deleted.");
+    return saved;
   };
 
-  // Reset to seed demo database
-  const handleLoadDemoData = async () => {
-    try {
-      try {
-        await deleteAllEntries();
-      } catch {
-        // Ignore pre-clear error
-      }
-      
-      const seededEntries: WellnessEntry[] = [];
-      for (const initial of INITIAL_ENTRIES) {
-        const saved = await createEntry(initial);
-        seededEntries.push(saved);
-      }
-      setEntries(seededEntries);
-      setIsBackendOffline(false);
-      triggerToast("Demo data reloaded on backend successfully.");
-    } catch (error) {
-      console.error("Failed to load demo data on backend, falling back to local memory:", error);
-      setIsBackendOffline(true);
-      setEntries(INITIAL_ENTRIES);
-      triggerToast("Backend connection unavailable. Demo data reloaded locally.");
-    }
+  // Clear this visitor's local practice history (Quick Reflections are kept)
+  const handleClearLogs = () => {
+    commitEntries([]);
+    setIsClearDialogOpen(false);
+    triggerToast("Practice history cleared. Viewing empty states.");
+  };
+
+  // Explicitly load example entries (replacing any previously loaded sample entries)
+  const handleLoadSampleData = () => {
+    commitEntries([...entries.filter(e => !e.isSample), ...buildSampleEntries()]);
+    triggerToast("Sample data loaded. It is labelled as sample and separate from your own entries.");
+  };
+
+  const handleRemoveSampleData = () => {
+    commitEntries(entries.filter(e => !e.isSample));
+    triggerToast("Sample data removed.");
+  };
+
+  const handleToggleIncludeReflections = (checked: boolean) => {
+    setIncludeReflectionsInAI(checked);
+    savePrefs({ includeReflectionsInAI: checked });
   };
 
   const practices: Practice[] = [
@@ -856,43 +663,52 @@ export default function App() {
 
   const chartData = getAggregatedLogs();
 
-  // Extract reflections
-  const reflections = entries
-    .filter(e => e.reflection && e.reflection.trim() !== '')
-    .map(e => ({ text: e.reflection, createdAt: e.created_at, date: e.date }));
-
   const aiInsights = getAIInsights(entries);
 
   return (
     <Layout currentTab={currentTab} setCurrentTab={setCurrentTab}>
       <div className="page-container">
         
-        {/* Offline Banner */}
-        {isBackendOffline && (
+        {/* Local demo notice */}
+        <div role="note" style={{
+          backgroundColor: 'rgba(167, 139, 250, 0.08)',
+          border: '1px solid rgba(167, 139, 250, 0.22)',
+          borderRadius: '12px',
+          padding: '10px 16px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '10px',
+          color: 'var(--text-secondary)',
+          fontSize: '0.82rem',
+          lineHeight: 1.45,
+          textAlign: 'left',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}>
           <div style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '12px',
-            padding: '12px 20px',
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            color: '#fca5a5',
-            fontSize: '0.9rem',
-            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.05)',
-            width: '100%',
-            boxSizing: 'border-box'
-          }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: '#ef4444',
-              boxShadow: '0 0 8px #ef4444'
-            }} />
-            <span>Backend connection unavailable. Using local demo data.</span>
-          </div>
+            width: '8px',
+            height: '8px',
+            marginTop: '6px',
+            borderRadius: '50%',
+            flexShrink: 0,
+            backgroundColor: 'var(--color-lavender-light)',
+            boxShadow: '0 0 8px var(--color-lavender-light)'
+          }} />
+          <span>
+            <strong style={{ color: '#fff' }}>Local demo.</strong> Your entries and reflections are saved in this browser only.
+            They don’t sync between devices and may be lost if you clear your browser’s site data.
+          </span>
+        </div>
+
+        {isClearDialogOpen && (
+          <ConfirmDialog
+            title="Clear your practice history?"
+            description="This removes the practice sessions saved in this browser. Your Quick Reflections are kept. This can’t be undone."
+            confirmLabel="Clear history"
+            onConfirm={handleClearLogs}
+            onCancel={() => setIsClearDialogOpen(false)}
+          />
         )}
 
         {/* Success Toast */}
@@ -1315,67 +1131,11 @@ export default function App() {
                 </button>
               </div>    </div>
             {/* Quick reflection inputs bottom */}
-            <div className="glass-panel" style={{ padding: '24px', marginTop: '24px', textAlign: 'left' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <MessageSquare size={18} style={{ color: 'var(--color-lavender-light)' }} />
-                <h3 style={{ fontSize: '1.1rem', color: '#fff' }}>Quick Reflection</h3>
-              </div>
-              <form onSubmit={handleSaveReflection} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <input 
-                  type="text" 
-                  value={newReflectionText}
-                  onChange={(e) => setNewReflectionText(e.target.value)}
-                  placeholder="Record how your body or mind feels right now..." 
-                  style={{
-                    flex: 1,
-                    minWidth: '260px',
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    color: '#fff',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                    transition: 'var(--transition-fast)'
-                  }}
-                  className="reflection-input"
-                />
-                <button type="submit" className="btn btn-secondary" style={{ display: 'flex', gap: '6px' }}>
-                  <Send size={14} />
-                  <span>Log</span>
-                </button>
-              </form>
-
-              {/* Reflection Log List */}
-              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {reflections.length > 0 ? (
-                  reflections.slice(0, 3).map((ref, idx) => (
-                    <div key={idx} style={{ 
-                      fontSize: '0.85rem', 
-                      color: 'var(--text-secondary)', 
-                      padding: '10px 12px', 
-                      borderRadius: '8px', 
-                      backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                      borderLeft: '2px solid var(--color-lavender-light)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '12px'
-                    }}>
-                      <span style={{ fontStyle: 'italic' }}>"{ref.text}"</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
-                        {formatEntryDate(ref.createdAt, ref.date)}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    No reflection notes logged yet. Log reflections inside your wellness entries to list them here.
-                  </div>
-                )}
-              </div>
-            </div>
+            <QuickReflection
+              reflections={reflections}
+              onAdd={handleAddReflection}
+              onDelete={handleDeleteReflection}
+            />
           </div>
         )}
 
@@ -1426,28 +1186,52 @@ export default function App() {
               </div>
 
               {/* Data controls */}
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {entries.some(e => e.isSample) && (
+                  <button
+                    onClick={handleRemoveSampleData}
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.78rem', padding: '6px 12px', minHeight: '44px', borderColor: 'rgba(167, 139, 250, 0.3)', color: 'var(--color-lavender-light)' }}
+                  >
+                    <span>Remove Sample Data</span>
+                  </button>
+                )}
                 {entries.length > 0 ? (
                   <button 
-                    onClick={handleClearLogs}
+                    onClick={() => setIsClearDialogOpen(true)}
                     className="btn btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '6px 12px', borderColor: 'rgba(244, 63, 94, 0.25)', color: 'var(--color-rose-soft)' }}
+                    style={{ fontSize: '0.78rem', padding: '6px 12px', minHeight: '44px', borderColor: 'rgba(244, 63, 94, 0.25)', color: 'var(--color-rose-soft)' }}
                   >
                     <Trash2 size={14} style={{ marginRight: '4px' }} />
-                    <span>Clear Data</span>
+                    <span>Clear History</span>
                   </button>
                 ) : (
                   <button 
-                    onClick={handleLoadDemoData}
+                    onClick={handleLoadSampleData}
                     className="btn btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '6px 12px', borderColor: 'rgba(20, 184, 166, 0.25)', color: 'var(--color-teal-light)' }}
+                    style={{ fontSize: '0.78rem', padding: '6px 12px', minHeight: '44px', borderColor: 'rgba(20, 184, 166, 0.25)', color: 'var(--color-teal-light)' }}
                   >
                     <RefreshCw size={14} style={{ marginRight: '4px' }} />
-                    <span>Load Demo Data</span>
+                    <span>Load Sample Data</span>
                   </button>
                 )}
               </div>
             </div>
+
+            {entries.some(e => e.isSample) && (
+              <div role="status" style={{
+                backgroundColor: 'rgba(20, 184, 166, 0.07)',
+                border: '1px solid rgba(20, 184, 166, 0.22)',
+                borderRadius: '12px',
+                padding: '10px 16px',
+                marginBottom: '20px',
+                fontSize: '0.82rem',
+                color: 'var(--text-secondary)',
+                textAlign: 'left'
+              }}>
+                <strong style={{ color: '#fff' }}>Sample data included.</strong> {entries.filter(e => e.isSample).length} example sessions are mixed into these statistics. They are not your own practice and can be removed at any time.
+              </div>
+            )}
 
             {entries.length === 0 ? (
               /* Soft Empty State */
@@ -1485,8 +1269,8 @@ export default function App() {
                     <Plus size={16} />
                     <span>Log First Practice</span>
                   </button>
-                  <button onClick={handleLoadDemoData} className="btn btn-secondary">
-                    <span>Load Mock Demo Data</span>
+                  <button onClick={handleLoadSampleData} className="btn btn-secondary">
+                    <span>Load Sample Data</span>
                   </button>
                 </div>
               </div>
@@ -1796,6 +1580,32 @@ export default function App() {
                 Review patterns, trends and reflections from your wellness practice.
               </p>
             </div>
+
+            <label style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              marginBottom: '20px',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              fontSize: '0.82rem',
+              color: 'var(--text-secondary)',
+              textAlign: 'left',
+              cursor: 'pointer',
+              lineHeight: 1.45
+            }}>
+              <input
+                type="checkbox"
+                checked={includeReflectionsInAI}
+                onChange={(e) => handleToggleIncludeReflections(e.target.checked)}
+                style={{ width: '20px', height: '20px', marginTop: '1px', flexShrink: 0, accentColor: 'var(--color-teal)' }}
+              />
+              <span>
+                <strong style={{ color: '#fff' }}>Include my reflection notes in AI analysis.</strong> Off by default: only aggregate wellness numbers are sent. When on, your note text is sent to Gemini for this analysis and is not stored on the server.
+              </span>
+            </label>
 
             {isLoadingInsights ? (
               <div className="glass-panel" style={{

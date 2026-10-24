@@ -932,7 +932,7 @@ export default function App() {
         {currentTab === 'today' && (
           <div>
             {/* Hero Section */}
-            <div className="glass-panel" style={{
+            <div className="glass-panel today-hero" style={{
               padding: '12px 32px 32px 32px',
               minHeight: '360px',
               borderRadius: 'var(--border-radius-lg)',
@@ -1008,12 +1008,12 @@ export default function App() {
 
               <div className="today-hero-content-wrapper">
                 {/* Left content column */}
-                <div style={{ maxWidth: '560px', width: '100%', position: 'relative', zIndex: 10 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
-                    <span className="badge badge-teal" style={{ alignSelf: 'flex-start' }}>
+                <div className="today-hero-text" style={{ maxWidth: '560px', width: '100%', position: 'relative', zIndex: 10 }}>
+                  <div className="today-hero-heading" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
+                    <span className="badge badge-teal today-hero-badge" style={{ alignSelf: 'flex-start' }}>
                       Daily Focus
                     </span>
-                    <h2 style={{
+                    <h2 className="today-hero-title" style={{
                       fontSize: '2.2rem',
                       fontFamily: 'var(--font-headings)',
                       fontWeight: 700,
@@ -1024,7 +1024,7 @@ export default function App() {
                       Welcome back
                     </h2>
                     {/* Thin elegant gradient divider line centered under the title */}
-                    <div style={{ 
+                    <div className="today-hero-divider" style={{ 
                       position: 'relative', 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -1050,7 +1050,7 @@ export default function App() {
                       }} />
                     </div>
                   </div>
-                  <p style={{
+                  <p className="today-hero-quote" style={{
                     fontSize: '1.1rem',
                     color: 'var(--text-secondary)',
                     marginBottom: '12px',
@@ -1060,7 +1060,7 @@ export default function App() {
                   }}>
                     “Create balance through small daily practices. Track patterns, not perfection.”
                   </p>
-                  <p style={{
+                  <p className="today-hero-subtitle" style={{
                     fontSize: '0.9rem',
                     color: 'var(--text-muted)',
                     marginBottom: '20px',
@@ -1068,7 +1068,7 @@ export default function App() {
                   }}>
                     Your body and mind deserve a gentle reset.
                   </p>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <div className="today-hero-actions" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     <button onClick={() => handleOpenEntryModal()} className="btn btn-primary">
                       <Plus size={16} />
                       <span>Log Practice</span>
@@ -1113,7 +1113,7 @@ export default function App() {
                       WebkitMaskImage: 'linear-gradient(to top, transparent 20%, rgba(0,0,0,0.8) 100%)',
                       animation: 'floatLotus 5s ease-in-out infinite'
                     }}
-                    className="hero-logo-img"
+                    className="hero-logo-img hero-logo-reflection"
                   />
                   {/* Floating Particles */}
                   <div className="glow-particle" style={{ bottom: '20%', left: '15%', '--particle-drift': '15px', animationDelay: '0s', width: '4px', height: '4px' } as React.CSSProperties} />
